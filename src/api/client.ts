@@ -13,7 +13,8 @@ export function getAccessToken(): string | null {
   return currentAccessToken;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).replace(/\/$/, '') : '';
+const rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
+const API_BASE = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
 
 export async function apiFetch<T>(
   endpoint: string,

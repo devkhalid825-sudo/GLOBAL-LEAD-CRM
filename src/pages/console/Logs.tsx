@@ -28,7 +28,9 @@ export const LogsPage: React.FC = () => {
 
     // Setup Socket.IO live tail
     const token = getAccessToken();
-    const socket: Socket = io('/logs', {
+    const rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
+    const socketBase = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+    const socket: Socket = io(`${socketBase}/logs`, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
