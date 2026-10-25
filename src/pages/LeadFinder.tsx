@@ -245,8 +245,9 @@ export const LeadFinderPage: React.FC = () => {
                 onChange={(e) => setSelectedSource(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value="auto">Auto (Google Places ➔ SerpAPI ➔ Apify ➔ Overpass)</option>
+                <option value="auto">Auto (Google Places ➔ Serper ➔ SerpAPI ➔ Apify ➔ Overpass)</option>
                 <option value="google_places">Google Places API Only</option>
+                <option value="serper">Serper.dev (Google Maps Fast) Only</option>
                 <option value="serpapi">SerpAPI (Google Maps) Only</option>
                 <option value="apify">Apify Scraper Only</option>
                 <option value="overpass">OpenStreetMap (Overpass - Free) Only</option>
