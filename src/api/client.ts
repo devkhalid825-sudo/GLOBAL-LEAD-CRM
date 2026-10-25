@@ -14,7 +14,12 @@ export function getAccessToken(): string | null {
 }
 
 const rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
-const API_BASE = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+let API_BASE = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+
+// Auto-upgrade http to https if current page is served over https to prevent Mixed Content errors
+if (typeof window !== 'undefined' && window.location.protocol === 'https:' && API_BASE.startsWith('http://')) {
+  API_BASE = API_BASE.replace(/^http:\/\//, 'https://');
+}
 
 export async function apiFetch<T>(
   endpoint: string,

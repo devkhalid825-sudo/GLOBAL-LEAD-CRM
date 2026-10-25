@@ -43,7 +43,10 @@ export const ChatPage: React.FC = () => {
 
     const token = getAccessToken();
     const rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
-    const socketBase = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+    let socketBase = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && socketBase.startsWith('http://')) {
+      socketBase = socketBase.replace(/^http:\/\//, 'https://');
+    }
     const chatSocket = io(`${socketBase}/chat`, {
       auth: { token },
       transports: ['websocket', 'polling'],
