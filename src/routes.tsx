@@ -5,11 +5,14 @@ import { AppShell } from './components/layout/AppShell.js';
 import { LoginPage } from './auth/LoginPage.js';
 import { DashboardPage } from './pages/Dashboard.js';
 
-// Operational Pages (Phase 2 & Phase 3)
+// Operational Pages (Phase 2, Phase 3 & Phase 4)
 import { LeadFinderPage } from './pages/LeadFinder.js';
 import { LeadsPage } from './pages/Leads.js';
 import { LeadDetailPage } from './pages/LeadDetail.js';
 import { ChatPage } from './pages/Chat.js';
+import { ReportsPage } from './pages/Reports.js';
+import { InboxPage } from './pages/Inbox.js';
+import { FollowupsPage } from './pages/Followups.js';
 
 // Console Pages (Phase 1)
 import { IntegrationsPage } from './pages/console/Integrations.js';
@@ -21,11 +24,8 @@ import { HealthPage } from './pages/console/Health.js';
 
 // Future Phase Placeholders
 import {
-  InboxPage,
   MeetingsPage,
   ProposalsPage,
-  FollowupsPage,
-  ReportsPage,
 } from './pages/Placeholders.js';
 
 export const AppRoutes: React.FC = () => {

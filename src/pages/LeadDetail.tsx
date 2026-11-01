@@ -37,6 +37,14 @@ export const LeadDetailPage: React.FC = () => {
   const [callNotes, setCallNotes] = useState('');
   const [submittingCall, setSubmittingCall] = useState(false);
 
+  // Email outreach state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [submittingEmail, setSubmittingEmail] = useState(false);
+  const [emailError, setEmailError] = useState('');
+
   const fetchLeadData = async () => {
     try {
       setLoading(true);
@@ -97,6 +105,34 @@ export const LeadDetailPage: React.FC = () => {
     }
   };
 
+  const handleSendLeadEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailTo.trim() || !emailSubject.trim()) {
+      setEmailError('Recipient email and subject are required');
+      return;
+    }
+    setSubmittingEmail(true);
+    setEmailError('');
+
+    try {
+      await api.post('/emails/send', {
+        leadId: id,
+        to: emailTo.trim(),
+        subject: emailSubject.trim(),
+        bodyText: emailBody,
+        bodyHtml: `<p>${emailBody.replace(/\n/g, '<br/>')}</p>`,
+      });
+      setShowEmailModal(false);
+      setEmailSubject('');
+      setEmailBody('');
+      fetchLeadData();
+    } catch (err: any) {
+      setEmailError(err.message || 'Failed to dispatch email');
+    } finally {
+      setSubmittingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-500 flex justify-center items-center">
@@ -122,6 +158,7 @@ export const LeadDetailPage: React.FC = () => {
 
   const phone = lead.phoneNorm || (lead.phones && lead.phones[0]);
   const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;
+  const leadEmail = (Array.isArray(lead.emails) && lead.emails[0]) || null;
   const waLink = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
         `Hi ${lead.name}, I wanted to follow up with you regarding our services.`
@@ -173,6 +210,18 @@ export const LeadDetailPage: React.FC = () => {
               <span>WhatsApp Message</span>
             </a>
           )}
+
+          <button
+            onClick={() => {
+              setEmailTo(leadEmail || '');
+              setEmailSubject(`Inquiry for ${lead.name}`);
+              setShowEmailModal(true);
+            }}
+            className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+          >
+            <Mail className="w-4 h-4" />
+            <span>Send Email {leadEmail ? `(${leadEmail})` : ''}</span>
+          </button>
 
           <button
             onClick={() => setShowCallModal(true)}
@@ -400,6 +449,85 @@ export const LeadDetailPage: React.FC = () => {
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold"
                 >
                   {submittingCall ? 'Saving...' : 'Save to Timeline'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-400" />
+              Send Outreach Email
+            </h3>
+
+            {emailError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                {emailError}
+              </div>
+            )}
+
+            <form onSubmit={handleSendLeadEmail} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Recipient Email
+                </label>
+                <input
+                  type="email"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="e.g. contact@business.com"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Subject Line
+                </label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Subject line..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Message Body
+                </label>
+                <textarea
+                  rows={5}
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder={`Hi ${lead.name},\n\nI wanted to reach out regarding your business in ${lead.city}...`}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white font-sans"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEmail}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+                >
+                  {submittingEmail ? 'Sending...' : 'Send Email'}
                 </button>
               </div>
             </form>
