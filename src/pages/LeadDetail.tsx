@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Briefcase,
   ExternalLink,
+  Eye,
 } from 'lucide-react';
 
 export const LeadDetailPage: React.FC = () => {
@@ -57,6 +58,7 @@ export const LeadDetailPage: React.FC = () => {
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
   const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
+  const [showWebPreview, setShowWebPreview] = useState(false);
 
   const fetchAiAudit = async () => {
     if (!id) return;
@@ -318,6 +320,75 @@ export const LeadDetailPage: React.FC = () => {
           <span className="px-3 py-1 rounded-full uppercase font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {lead.status}
           </span>
+        </div>
+      </div>
+
+      {/* Live Ad Spy & Online Store Inspector */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-2">
+          <Eye className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs font-bold text-white uppercase tracking-wider">
+            Live Ad Spy & Store Inspector:
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Live Meta Ad Library Viewer */}
+          <a
+            href={`https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(
+              lead.name
+            )}&search_type=keyword_unordered&media_type=all`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            title="Search and view live video & photo ads running on Meta for this business"
+          >
+            <span>👁️ View Live Meta Ads</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+
+          {/* Google Ads Transparency */}
+          <a
+            href={`https://adstransparency.google.com/?region=anywhere&q=${encodeURIComponent(
+              lead.website || lead.name
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            title="Search Google Ads Transparency Center"
+          >
+            <span>🔍 View Google Ads</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+
+          {/* Website / Store Inspection */}
+          {lead.website ? (
+            <>
+              <button
+                onClick={() => setShowWebPreview(true)}
+                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                title="Preview online store inside CRM"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Preview Store in CRM</span>
+              </button>
+
+              <a
+                href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                title="Open website in new browser tab"
+              >
+                <span>Visit Store</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </>
+          ) : (
+            <span className="text-xs text-rose-400 font-mono bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20">
+              ❌ No Website / Store Detected
+            </span>
+          )}
         </div>
       </div>
 
@@ -810,6 +881,55 @@ export const LeadDetailPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Live Website & Store Preview Modal */}
+      {showWebPreview && lead.website && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl h-[88vh] shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center gap-2 min-w-0">
+                <Globe className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="font-bold text-white text-xs sm:text-sm truncate">
+                  Store Preview: {lead.name}
+                </span>
+                <span className="font-mono text-[11px] text-slate-400 hidden sm:inline truncate max-w-xs">
+                  ({lead.website})
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs flex items-center gap-1.5 transition"
+                >
+                  <span>Open New Tab</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <button
+                  onClick={() => setShowWebPreview(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-white relative">
+              <iframe
+                src={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                className="w-full h-full border-0"
+                title={`${lead.name} store preview`}
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              />
+            </div>
+
+            <div className="p-2.5 bg-slate-950 border-t border-slate-800 text-center text-[11px] text-slate-400">
+              Tip: If this store restricts in-frame embedding (security policy), click "Open New Tab" above to inspect their live products and checkout flow directly!
+            </div>
           </div>
         </div>
       )}
