@@ -5,7 +5,7 @@ import { AppShell } from './components/layout/AppShell.js';
 import { LoginPage } from './auth/LoginPage.js';
 import { DashboardPage } from './pages/Dashboard.js';
 
-// Operational Pages (Phase 2, Phase 3 & Phase 4)
+// Operational Pages (Phase 2, Phase 3, Phase 4 & Phase 5)
 import { LeadFinderPage } from './pages/LeadFinder.js';
 import { LeadsPage } from './pages/Leads.js';
 import { LeadDetailPage } from './pages/LeadDetail.js';
@@ -13,6 +13,9 @@ import { ChatPage } from './pages/Chat.js';
 import { ReportsPage } from './pages/Reports.js';
 import { InboxPage } from './pages/Inbox.js';
 import { FollowupsPage } from './pages/Followups.js';
+import { MeetingsPage } from './pages/Meetings.js';
+import { ProposalsPage } from './pages/Proposals.js';
+import { PublicProposalPage } from './pages/PublicProposal.js';
 
 // Console Pages (Phase 1)
 import { IntegrationsPage } from './pages/console/Integrations.js';
@@ -22,17 +25,12 @@ import { AuditPage } from './pages/console/Audit.js';
 import { UsersPage } from './pages/console/Users.js';
 import { HealthPage } from './pages/console/Health.js';
 
-// Future Phase Placeholders
-import {
-  MeetingsPage,
-  ProposalsPage,
-} from './pages/Placeholders.js';
-
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Auth */}
+      {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/p/:token" element={<PublicProposalPage />} />
 
       {/* Authenticated Workspace */}
       <Route
