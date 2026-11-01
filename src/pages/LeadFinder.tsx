@@ -41,13 +41,18 @@ const FALLBACK_COUNTRIES: CountryItem[] = [
 ];
 
 const FALLBACK_CATEGORIES: CategoryItem[] = [
-  { id: 'cat_restaurants', name: 'Restaurants & Cafes' },
-  { id: 'cat_realestate', name: 'Real Estate & Property' },
+  { id: 'cat_webdev', name: 'Website Development (Next.js, WordPress, Web Apps)' },
+  { id: 'cat_appdev', name: 'Mobile App Development (iOS, Android, Flutter)' },
+  { id: 'cat_crm', name: 'Custom CRM & Lead Automation Systems' },
+  { id: 'cat_video', name: 'AI Video Ads & Explainer Video Production' },
+  { id: 'cat_aicontent', name: 'AI Content & Commercial Product Photography' },
+  { id: 'cat_seo', name: 'SEO & Google Ranking Services' },
+  { id: 'cat_shopify', name: 'Shopify & E-Commerce Store Development' },
+  { id: 'cat_remote_staff', name: 'Remote Staff Augmentation & Dedicated Developers' },
   { id: 'cat_it', name: 'Digital Agencies & IT Services' },
+  { id: 'cat_realestate', name: 'Real Estate & Property Agencies' },
+  { id: 'cat_restaurants', name: 'Restaurants & Retail Brands' },
   { id: 'cat_clinics', name: 'Dental & Medical Clinics' },
-  { id: 'cat_gyms', name: 'Gyms & Fitness Studios' },
-  { id: 'cat_autos', name: 'Car Dealerships & Auto Repair' },
-  { id: 'cat_law', name: 'Lawyers & Legal Firms' },
 ];
 
 const FALLBACK_CITIES: Record<string, CityItem[]> = {

@@ -16,6 +16,8 @@ import {
   Globe,
   Tag,
   CheckCircle2,
+  Briefcase,
+  ExternalLink,
 } from 'lucide-react';
 
 export const LeadDetailPage: React.FC = () => {
@@ -54,6 +56,7 @@ export const LeadDetailPage: React.FC = () => {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
+  const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
 
   const fetchAiAudit = async () => {
     if (!id) return;
@@ -402,6 +405,30 @@ export const LeadDetailPage: React.FC = () => {
                   "{aiAudit.callPitchHook}"
                 </div>
               </div>
+
+              {aiAudit.remoteStaffPitch && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-slate-400 font-semibold uppercase text-[11px] tracking-wider flex items-center gap-1">
+                      <Briefcase className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Dedicated Remote Staff Pitch</span>
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(aiAudit.remoteStaffPitch);
+                        setCopiedStaffPitch(true);
+                        setTimeout(() => setCopiedStaffPitch(false), 2000);
+                      }}
+                      className="text-[11px] text-purple-400 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      {copiedStaffPitch ? '✓ Copied!' : 'Copy Staff Pitch'}
+                    </button>
+                  </div>
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-200 font-mono text-[11px] leading-relaxed">
+                    "{aiAudit.remoteStaffPitch}"
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -501,6 +528,53 @@ export const LeadDetailPage: React.FC = () => {
               <span className="font-mono text-[10px] text-slate-500 bg-slate-950 px-2 py-1 rounded block truncate">
                 {lead.placeKey}
               </span>
+            </div>
+
+            {/* LinkedIn & Hiring Intent Intelligence */}
+            <div className="pt-3 border-t border-slate-800 space-y-2">
+              <span className="text-slate-400 block font-semibold text-[11px] uppercase tracking-wider">
+                💼 LinkedIn & Hiring Intelligence
+              </span>
+              <div className="space-y-1.5">
+                <a
+                  href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(lead.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-3 py-2 bg-slate-950 hover:bg-slate-800 text-blue-400 border border-slate-800 rounded-xl flex items-center justify-between text-[11px] font-medium transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" />
+                    <span>Company on LinkedIn</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+
+                <a
+                  href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(lead.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-3 py-2 bg-slate-950 hover:bg-slate-800 text-amber-400 border border-slate-800 rounded-xl flex items-center justify-between text-[11px] font-medium transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Check Active Job Openings</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(lead.name + ' jobs hiring')}&ibp=htl;jobs`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-3 py-2 bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 rounded-xl flex items-center justify-between text-[11px] font-medium transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Google Jobs Search</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
