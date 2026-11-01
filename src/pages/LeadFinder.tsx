@@ -22,6 +22,7 @@ interface CountryItem {
 interface CityItem {
   id: string;
   name: string;
+  countryCode?: string;
 }
 
 interface CategoryItem {
@@ -29,16 +30,75 @@ interface CategoryItem {
   name: string;
 }
 
+const FALLBACK_COUNTRIES: CountryItem[] = [
+  { code: 'PK', name: 'Pakistan' },
+  { code: 'US', name: 'United States' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'SA', name: 'Saudi Arabia' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+];
+
+const FALLBACK_CATEGORIES: CategoryItem[] = [
+  { id: 'cat_restaurants', name: 'Restaurants & Cafes' },
+  { id: 'cat_realestate', name: 'Real Estate & Property' },
+  { id: 'cat_it', name: 'Digital Agencies & IT Services' },
+  { id: 'cat_clinics', name: 'Dental & Medical Clinics' },
+  { id: 'cat_gyms', name: 'Gyms & Fitness Studios' },
+  { id: 'cat_autos', name: 'Car Dealerships & Auto Repair' },
+  { id: 'cat_law', name: 'Lawyers & Legal Firms' },
+];
+
+const FALLBACK_CITIES: Record<string, CityItem[]> = {
+  PK: [
+    { id: 'pk_1', name: 'Lahore' },
+    { id: 'pk_2', name: 'Karachi' },
+    { id: 'pk_3', name: 'Islamabad' },
+    { id: 'pk_4', name: 'Rawalpindi' },
+    { id: 'pk_5', name: 'Faisalabad' },
+  ],
+  US: [
+    { id: 'us_1', name: 'New York' },
+    { id: 'us_2', name: 'Los Angeles' },
+    { id: 'us_3', name: 'Chicago' },
+    { id: 'us_4', name: 'Houston' },
+    { id: 'us_5', name: 'Miami' },
+  ],
+  AE: [
+    { id: 'ae_1', name: 'Dubai' },
+    { id: 'ae_2', name: 'Abu Dhabi' },
+    { id: 'ae_3', name: 'Sharjah' },
+  ],
+  GB: [
+    { id: 'gb_1', name: 'London' },
+    { id: 'gb_2', name: 'Manchester' },
+    { id: 'gb_3', name: 'Birmingham' },
+  ],
+  SA: [
+    { id: 'sa_1', name: 'Riyadh' },
+    { id: 'sa_2', name: 'Jeddah' },
+  ],
+  CA: [
+    { id: 'ca_1', name: 'Toronto' },
+    { id: 'ca_2', name: 'Vancouver' },
+  ],
+  AU: [
+    { id: 'au_1', name: 'Sydney' },
+    { id: 'au_2', name: 'Melbourne' },
+  ],
+};
+
 export const LeadFinderPage: React.FC = () => {
-  const [countries, setCountries] = useState<CountryItem[]>([]);
-  const [cities, setCities] = useState<CityItem[]>([]);
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [countries, setCountries] = useState<CountryItem[]>(FALLBACK_COUNTRIES);
+  const [cities, setCities] = useState<CityItem[]>(FALLBACK_CITIES['PK']);
+  const [categories, setCategories] = useState<CategoryItem[]>(FALLBACK_CATEGORIES);
   const [jobs, setJobs] = useState<any[]>([]);
 
   // Selection form
   const [selectedCountry, setSelectedCountry] = useState('PK');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCity, setSelectedCity] = useState('Lahore');
+  const [selectedCategory, setSelectedCategory] = useState(FALLBACK_CATEGORIES[0].id);
   const [selectedSource, setSelectedSource] = useState('auto');
 
   // Estimate
@@ -50,19 +110,19 @@ export const LeadFinderPage: React.FC = () => {
   const fetchDropdowns = async () => {
     try {
       const [countriesRes, categoriesRes] = await Promise.all([
-        api.get<CountryItem[]>('/geo/countries'),
-        api.get<CategoryItem[]>('/categories'),
+        api.get<CountryItem[]>('/geo/countries').catch(() => []),
+        api.get<CategoryItem[]>('/categories').catch(() => []),
       ]);
-      const cList = Array.isArray(countriesRes) ? countriesRes : [];
-      const catList = Array.isArray(categoriesRes) ? categoriesRes : [];
+      const cList = Array.isArray(countriesRes) && countriesRes.length > 0 ? countriesRes : FALLBACK_COUNTRIES;
+      const catList = Array.isArray(categoriesRes) && categoriesRes.length > 0 ? categoriesRes : FALLBACK_CATEGORIES;
 
       setCountries(cList);
       setCategories(catList);
 
-      if (cList.length > 0) {
+      if (!selectedCountry && cList.length > 0) {
         setSelectedCountry(cList[0].code);
       }
-      if (catList.length > 0) {
+      if (!selectedCategory && catList.length > 0) {
         setSelectedCategory(catList[0].id);
       }
     } catch (err) {
@@ -72,13 +132,16 @@ export const LeadFinderPage: React.FC = () => {
 
   const fetchCities = async (countryCode: string) => {
     try {
-      const data = await api.get<CityItem[]>(`/geo/cities?country=${countryCode}`);
-      const cityList = Array.isArray(data) ? data : [];
+      const data = await api.get<CityItem[]>(`/geo/cities?country=${countryCode}`).catch(() => []);
+      const cityList = Array.isArray(data) && data.length > 0 ? data : (FALLBACK_CITIES[countryCode] || FALLBACK_CITIES['PK']);
       setCities(cityList);
       if (cityList.length > 0) setSelectedCity(cityList[0].name);
       else setSelectedCity('');
     } catch (err) {
       console.error(err);
+      const fallback = FALLBACK_CITIES[countryCode] || FALLBACK_CITIES['PK'];
+      setCities(fallback);
+      if (fallback.length > 0) setSelectedCity(fallback[0].name);
     }
   };
 
