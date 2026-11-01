@@ -49,6 +49,24 @@ export const LeadDetailPage: React.FC = () => {
   const [isScrapingEmail, setIsScrapingEmail] = useState(false);
   const [scrapeMessage, setScrapeMessage] = useState<string | null>(null);
 
+  // AI Needs Analysis state
+  const [aiAudit, setAiAudit] = useState<any | null>(null);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+  const [copiedPitch, setCopiedPitch] = useState(false);
+
+  const fetchAiAudit = async () => {
+    if (!id) return;
+    setLoadingAudit(true);
+    try {
+      const res = await api.get<any>(`/leads/${id}/ai-audit`);
+      setAiAudit(res);
+    } catch (err: any) {
+      alert(`AI Audit error: ${err.message}`);
+    } finally {
+      setLoadingAudit(false);
+    }
+  };
+
   const fetchLeadData = async () => {
     try {
       setLoading(true);
@@ -280,6 +298,15 @@ export const LeadDetailPage: React.FC = () => {
             <FileText className="w-4 h-4" />
             <span>Create Proposal</span>
           </button>
+
+          <button
+            onClick={fetchAiAudit}
+            disabled={loadingAudit}
+            className="px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50"
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>{loadingAudit ? 'Analyzing Needs...' : 'AI Needs & Pitch'}</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
@@ -299,6 +326,83 @@ export const LeadDetailPage: React.FC = () => {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {aiAudit && (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/40 p-5 rounded-2xl shadow-2xl space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <h3 className="font-bold text-white text-sm">
+                AI Commercial Audit & Pitch Intelligence for {lead.name}
+              </h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                Deal Value: {aiAudit.estimatedDealValue || '$500 - $1,500'}
+              </span>
+              <button
+                onClick={() => setAiAudit(null)}
+                className="text-slate-400 hover:text-white px-2 py-0.5 rounded text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-slate-400 block font-semibold mb-1.5 uppercase text-[11px] tracking-wider">
+                Services This Business Needs
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {aiAudit.neededServices?.map((svc: string, i: number) => (
+                  <span
+                    key={i}
+                    className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-lg font-medium"
+                  >
+                    ✓ {svc}
+                  </span>
+                ))}
+              </div>
+              <p className="text-slate-300 mt-3 leading-relaxed">
+                {aiAudit.businessOpportunity}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-slate-400 font-semibold uppercase text-[11px] tracking-wider">
+                    WhatsApp Outreach Script
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(aiAudit.whatsappPitchScript);
+                      setCopiedPitch(true);
+                      setTimeout(() => setCopiedPitch(false), 2000);
+                    }}
+                    className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    {copiedPitch ? '✓ Copied!' : 'Copy Pitch'}
+                  </button>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-200 font-mono text-[11px] leading-relaxed">
+                  "{aiAudit.whatsappPitchScript}"
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 block font-semibold mb-1 uppercase text-[11px] tracking-wider">
+                  Cold Call 15-Second Hook
+                </span>
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-slate-300 text-[11px]">
+                  "{aiAudit.callPitchHook}"
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
