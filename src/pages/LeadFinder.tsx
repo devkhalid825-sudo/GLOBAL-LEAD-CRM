@@ -53,9 +53,18 @@ export const LeadFinderPage: React.FC = () => {
         api.get<CountryItem[]>('/geo/countries'),
         api.get<CategoryItem[]>('/categories'),
       ]);
-      setCountries(countriesRes);
-      setCategories(categoriesRes);
-      if (categoriesRes.length > 0) setSelectedCategory(categoriesRes[0].id);
+      const cList = Array.isArray(countriesRes) ? countriesRes : [];
+      const catList = Array.isArray(categoriesRes) ? categoriesRes : [];
+
+      setCountries(cList);
+      setCategories(catList);
+
+      if (cList.length > 0) {
+        setSelectedCountry(cList[0].code);
+      }
+      if (catList.length > 0) {
+        setSelectedCategory(catList[0].id);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -64,8 +73,9 @@ export const LeadFinderPage: React.FC = () => {
   const fetchCities = async (countryCode: string) => {
     try {
       const data = await api.get<CityItem[]>(`/geo/cities?country=${countryCode}`);
-      setCities(data);
-      if (data.length > 0) setSelectedCity(data[0].name);
+      const cityList = Array.isArray(data) ? data : [];
+      setCities(cityList);
+      if (cityList.length > 0) setSelectedCity(cityList[0].name);
       else setSelectedCity('');
     } catch (err) {
       console.error(err);
@@ -117,7 +127,10 @@ export const LeadFinderPage: React.FC = () => {
   }, [selectedCountry, selectedCity, selectedCategory, selectedSource]);
 
   const handleStartSearch = async () => {
-    if (!selectedCategory) return;
+    if (!selectedCategory) {
+      alert('Please select an Industry / Category before starting lead extraction.');
+      return;
+    }
     setStarting(true);
     setMsg(null);
     try {
@@ -192,6 +205,9 @@ export const LeadFinderPage: React.FC = () => {
                 onChange={(e) => setSelectedCountry(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
+                {countries.length === 0 && (
+                  <option value="">Loading countries...</option>
+                )}
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
                     {c.name} ({c.code})
@@ -209,6 +225,9 @@ export const LeadFinderPage: React.FC = () => {
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
+                {cities.length === 0 && (
+                  <option value="">Loading cities...</option>
+                )}
                 {cities.map((city) => (
                   <option key={city.id} value={city.name}>
                     {city.name}
@@ -228,6 +247,9 @@ export const LeadFinderPage: React.FC = () => {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
+                {categories.length === 0 && (
+                  <option value="">Loading categories...</option>
+                )}
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
