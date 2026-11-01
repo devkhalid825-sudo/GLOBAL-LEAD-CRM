@@ -13,12 +13,44 @@ export function getAccessToken(): string | null {
   return currentAccessToken;
 }
 
-const rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
+let rawBase = import.meta.env.VITE_API_URL ? String(import.meta.env.VITE_API_URL).trim().replace(/\/$/, '') : '';
 let API_BASE = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
 
 // Auto-upgrade http to https if current page is served over https to prevent Mixed Content errors
 if (typeof window !== 'undefined' && window.location.protocol === 'https:' && API_BASE.startsWith('http://')) {
   API_BASE = API_BASE.replace(/^http:\/\//, 'https://');
+}
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshTokens(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        const newToken = refreshData.data?.accessToken || null;
+        setAccessToken(newToken);
+        return newToken;
+      }
+      setAccessToken(null);
+      return null;
+    } catch {
+      setAccessToken(null);
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 export async function apiFetch<T>(
@@ -42,28 +74,12 @@ export async function apiFetch<T>(
 
   let response = await fetch(url, config);
 
-  // If 401 Unauthorized, attempt token refresh automatically once
-  if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
-    try {
-      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        if (refreshData.data?.accessToken) {
-          setAccessToken(refreshData.data.accessToken);
-          headers.set('Authorization', `Bearer ${refreshData.data.accessToken}`);
-          // Retry original request
-          response = await fetch(url, { ...config, headers });
-        }
-      } else {
-        setAccessToken(null);
-      }
-    } catch {
-      setAccessToken(null);
+  // If 401 Unauthorized, attempt token refresh automatically once (only if user was previously authenticated)
+  if (response.status === 401 && currentAccessToken && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
+    const newToken = await refreshTokens();
+    if (newToken) {
+      headers.set('Authorization', `Bearer ${newToken}`);
+      response = await fetch(url, { ...config, headers });
     }
   }
 
