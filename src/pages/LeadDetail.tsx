@@ -45,6 +45,10 @@ export const LeadDetailPage: React.FC = () => {
   const [submittingEmail, setSubmittingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
 
+  // Website email scraper state
+  const [isScrapingEmail, setIsScrapingEmail] = useState(false);
+  const [scrapeMessage, setScrapeMessage] = useState<string | null>(null);
+
   const fetchLeadData = async () => {
     try {
       setLoading(true);
@@ -130,6 +134,25 @@ export const LeadDetailPage: React.FC = () => {
       setEmailError(err.message || 'Failed to dispatch email');
     } finally {
       setSubmittingEmail(false);
+    }
+  };
+
+  const handleScrapeEmail = async () => {
+    if (!id) return;
+    setIsScrapingEmail(true);
+    setScrapeMessage(null);
+    try {
+      const res = await api.post<any>(`/leads/${id}/scrape-email`, {});
+      if (res.found > 0) {
+        setScrapeMessage(`✅ Discovered ${res.found} email(s): ${res.emails.join(', ')}`);
+        fetchLeadData();
+      } else {
+        setScrapeMessage('ℹ️ No public email found on the website or /contact page.');
+      }
+    } catch (err: any) {
+      setScrapeMessage(`❌ Extraction failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsScrapingEmail(false);
     }
   };
 
@@ -223,6 +246,17 @@ export const LeadDetailPage: React.FC = () => {
             <span>Send Email {leadEmail ? `(${leadEmail})` : ''}</span>
           </button>
 
+          {lead.website && (
+            <button
+              onClick={handleScrapeEmail}
+              disabled={isScrapingEmail}
+              className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50"
+            >
+              <Globe className="w-4 h-4" />
+              <span>{isScrapingEmail ? 'Scanning Website...' : 'Find Website Email'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowCallModal(true)}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
@@ -255,6 +289,18 @@ export const LeadDetailPage: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {scrapeMessage && (
+        <div className="bg-slate-900 border border-purple-500/40 px-4 py-3 rounded-xl text-xs text-purple-200 flex items-center justify-between shadow-lg">
+          <span>{scrapeMessage}</span>
+          <button
+            onClick={() => setScrapeMessage(null)}
+            className="text-slate-400 hover:text-white px-2 py-0.5 rounded text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Two Column Layout: Details vs Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

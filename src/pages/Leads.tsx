@@ -11,6 +11,7 @@ import {
   Search,
   ChevronRight,
   ShieldAlert,
+  Globe,
 } from 'lucide-react';
 
 export const LeadsPage: React.FC = () => {
@@ -23,6 +24,24 @@ export const LeadsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+
+  // Email enrichment state
+  const [enriching, setEnriching] = useState(false);
+  const [enrichStatus, setEnrichStatus] = useState<string | null>(null);
+
+  const handleEnrichAll = async () => {
+    try {
+      setEnriching(true);
+      setEnrichStatus('Scraping websites for public emails...');
+      const res = await api.post<any>('/leads/enrich-all', {});
+      setEnrichStatus(`Finished: Scanned ${res.scanned} leads, enriched ${res.enriched} with new emails.`);
+      fetchLeads();
+    } catch (err: any) {
+      setEnrichStatus(`Failed: ${err.message}`);
+    } finally {
+      setEnriching(false);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -96,14 +115,33 @@ export const LeadsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleExportExcel}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-emerald-900/20 transition self-start"
-        >
-          <Download className="w-4 h-4" />
-          <span>Export to Excel (.xlsx)</span>
-        </button>
+        <div className="flex items-center gap-3 self-start">
+          <button
+            onClick={handleEnrichAll}
+            disabled={enriching}
+            className="flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold px-4 py-2.5 rounded-xl text-sm transition disabled:opacity-50"
+            title="Scan websites of leads to find and update public email addresses"
+          >
+            <Globe className="w-4 h-4 text-purple-400" />
+            <span>{enriching ? 'Finding Emails...' : 'Find Website Emails'}</span>
+          </button>
+
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl text-sm shadow-lg shadow-emerald-900/20 transition"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export to Excel (.xlsx)</span>
+          </button>
+        </div>
       </div>
+
+      {enrichStatus && (
+        <div className="bg-slate-900 border border-purple-500/30 px-4 py-3 rounded-xl text-xs text-purple-200 flex items-center justify-between shadow-lg">
+          <span>{enrichStatus}</span>
+          <button onClick={() => setEnrichStatus(null)} className="text-slate-400 hover:text-white px-2">✕</button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
@@ -196,6 +234,11 @@ export const LeadsPage: React.FC = () => {
                         ) : (
                           <span className="text-slate-500 text-[11px]">No website listed</span>
                         )}
+                        {Array.isArray(lead.emails) && lead.emails.length > 0 ? (
+                          <span className="text-purple-300 font-mono text-[11px] block mt-1 truncate max-w-xs">
+                            ✉️ {lead.emails[0]}
+                          </span>
+                        ) : null}
                       </td>
 
                       {/* Communications */}
