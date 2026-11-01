@@ -53,6 +53,7 @@ export const LeadDetailPage: React.FC = () => {
   const [aiAudit, setAiAudit] = useState<any | null>(null);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
+  const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
 
   const fetchAiAudit = async () => {
     if (!id) return;
@@ -403,6 +404,44 @@ export const LeadDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Meta Ads & Creative Funnel Intelligence */}
+          {aiAudit.metaAudit && (
+            <div className="pt-3 border-t border-slate-800 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                  <span>🎯 Meta (FB/Insta) Ad & Creative Audit</span>
+                </span>
+                <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                  {aiAudit.metaAudit.adStatus}
+                </span>
+              </div>
+
+              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 text-[11px] font-semibold">
+                    Personalized Meta Outreach Pitch:
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(aiAudit.metaAudit.metaPitchScript);
+                      setCopiedMetaPitch(true);
+                      setTimeout(() => setCopiedMetaPitch(false), 2000);
+                    }}
+                    className="text-[11px] text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    {copiedMetaPitch ? '✓ Copied Meta Pitch!' : 'Copy Meta Pitch'}
+                  </button>
+                </div>
+                <div className="text-slate-200 font-mono text-[11px] leading-relaxed">
+                  "{aiAudit.metaAudit.metaPitchScript}"
+                </div>
+                <div className="text-[11px] text-amber-400 font-mono pt-1">
+                  💡 Recommended Service Package: {aiAudit.metaAudit.recommendedService}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
