@@ -13,6 +13,7 @@ import {
   AlertCircle,
   X,
   ExternalLink,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface EmailMessage {
@@ -170,7 +171,11 @@ export const InboxPage: React.FC = () => {
       {/* Main Inbox Card */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
         {/* Email List Sidebar */}
-        <div className="lg:col-span-5 border-r border-slate-800 flex flex-col">
+        <div
+          className={`lg:col-span-5 border-r border-slate-800 flex flex-col ${
+            selectedEmail ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
           {/* Search bar */}
           <div className="p-4 border-b border-slate-800">
             <div className="relative">
@@ -237,13 +242,28 @@ export const InboxPage: React.FC = () => {
         </div>
 
         {/* Email Detail Preview */}
-        <div className="lg:col-span-7 flex flex-col bg-slate-950/40">
+        <div
+          className={`lg:col-span-7 flex flex-col bg-slate-950/40 ${
+            selectedEmail ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
           {selectedEmail ? (
-            <div className="p-6 flex-1 flex flex-col">
+            <div className="p-4 sm:p-6 flex-1 flex flex-col">
               <div className="border-b border-slate-800 pb-4 mb-4">
-                <div className="flex justify-between items-start gap-4">
-                  <h2 className="text-xl font-bold text-white">{selectedEmail.subject}</h2>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedEmail(null)}
+                      className="lg:hidden p-1.5 -ml-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                      title="Back to inbox list"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-base sm:text-xl font-bold text-white leading-tight">
+                      {selectedEmail.subject}
+                    </h2>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     {selectedEmail.status.toUpperCase()}
                   </span>

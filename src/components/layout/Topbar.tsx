@@ -1,19 +1,32 @@
 import React from 'react';
 import { useAuth } from '../../auth/AuthProvider.js';
-import { LogOut, User as UserIcon, Shield } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 
-export const Topbar: React.FC = () => {
+interface TopbarProps {
+  onToggleMenu?: () => void;
+}
+
+export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
   const { user, logout } = useAuth();
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 z-10">
-      <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-white">Workspace</h2>
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 z-10">
+      <div className="flex items-center gap-3">
+        {onToggleMenu && (
+          <button
+            onClick={onToggleMenu}
+            className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <h2 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-white">Workspace</h2>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 flex items-center justify-center font-semibold text-xs">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
             {user?.name?.slice(0, 2).toUpperCase() || 'US'}
           </div>
           <div className="hidden sm:block text-left">
@@ -21,7 +34,7 @@ export const Topbar: React.FC = () => {
               {user?.name}
             </div>
             <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-              <span>{user?.email}</span>
+              <span className="truncate max-w-[150px]">{user?.email}</span>
               <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-mono uppercase font-bold">
                 {user?.role}
               </span>

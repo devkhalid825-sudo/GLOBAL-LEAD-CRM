@@ -183,7 +183,7 @@ export const MeetingsPage: React.FC = () => {
                   {m.notes && <p className="text-xs text-slate-400 mt-1">{m.notes}</p>}
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-2.5 self-start sm:self-center flex-wrap">
                   {m.meetLink && (
                     <a
                       href={m.meetLink}

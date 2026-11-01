@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { api, getAccessToken } from '../api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { MessageSquare, Send, Users, Hash, Plus, Circle } from 'lucide-react';
+import { MessageSquare, Send, Users, Hash, Plus, Circle, ChevronLeft } from 'lucide-react';
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +11,7 @@ export const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMsg, setNewMsg] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // New Channel Modal
@@ -113,7 +114,11 @@ export const ChatPage: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
       {/* Channels & Direct Conversations Sidebar */}
-      <div className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
+      <div
+        className={`w-full md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0 ${
+          mobileShowChat ? 'hidden md:flex' : 'flex'
+        }`}
+      >
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <h2 className="text-sm font-bold text-white flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-emerald-400" />
@@ -139,7 +144,10 @@ export const ChatPage: React.FC = () => {
               return (
                 <button
                   key={conv.id}
-                  onClick={() => setActiveConv(conv)}
+                  onClick={() => {
+                    setActiveConv(conv);
+                    setMobileShowChat(true);
+                  }}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 transition ${
                     isSelected
                       ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20'
@@ -156,18 +164,29 @@ export const ChatPage: React.FC = () => {
       </div>
 
       {/* Messages Stream & Chat Window */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-900/40">
+      <div
+        className={`flex-1 flex flex-col min-w-0 bg-slate-900/40 ${
+          mobileShowChat ? 'flex' : 'hidden md:flex'
+        }`}
+      >
         {/* Chat Header */}
-        <div className="h-14 px-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+        <div className="h-14 px-4 sm:px-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileShowChat(false)}
+              className="md:hidden p-1.5 -ml-1 mr-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              title="Back to Channels"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             <Hash className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-white text-sm">
+            <span className="font-bold text-white text-sm truncate max-w-[180px] sm:max-w-none">
               {activeConv?.name || 'General Outreach'}
             </span>
           </div>
           <div className="flex items-center gap-2 text-xs text-emerald-400">
             <Circle className="w-2.5 h-2.5 fill-current" />
-            <span className="text-slate-400">Real-time Connected</span>
+            <span className="text-slate-400 hidden sm:inline">Real-time Connected</span>
           </div>
         </div>
 

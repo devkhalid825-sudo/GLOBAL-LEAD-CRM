@@ -209,18 +209,18 @@ export const LeadDetailPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Top Bar Navigation */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <button
           onClick={() => navigate('/leads')}
-          className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition"
+          className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition flex-shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{lead.name}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">{lead.name}</h1>
           <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-            <span>
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <span className="truncate">
               {lead.address || `${lead.city}, ${lead.country}`}
             </span>
           </p>
@@ -228,12 +228,12 @@ export const LeadDetailPage: React.FC = () => {
       </div>
 
       {/* Action Bar (One-click Comms) */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {phone && (
             <a
               href={`tel:${phone}`}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
             >
               <Phone className="w-4 h-4 text-emerald-400" />
               <span>Call ({phone})</span>
@@ -245,7 +245,7 @@ export const LeadDetailPage: React.FC = () => {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+              className="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
             >
               <MessageCircle className="w-4 h-4" />
               <span>WhatsApp Message</span>
@@ -258,7 +258,7 @@ export const LeadDetailPage: React.FC = () => {
               setEmailSubject(`Inquiry for ${lead.name}`);
               setShowEmailModal(true);
             }}
-            className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+            className="px-3.5 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
           >
             <Mail className="w-4 h-4" />
             <span>Send Email {leadEmail ? `(${leadEmail})` : ''}</span>
@@ -268,16 +268,16 @@ export const LeadDetailPage: React.FC = () => {
             <button
               onClick={handleScrapeEmail}
               disabled={isScrapingEmail}
-              className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50"
+              className="px-3.5 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
             >
               <Globe className="w-4 h-4" />
-              <span>{isScrapingEmail ? 'Scanning Website...' : 'Find Website Email'}</span>
+              <span>{isScrapingEmail ? 'Scanning...' : 'Find Website Email'}</span>
             </button>
           )}
 
           <button
             onClick={() => setShowCallModal(true)}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
           >
             <Clock className="w-4 h-4 text-amber-400" />
             <span>Log Call Outcome</span>
@@ -285,7 +285,7 @@ export const LeadDetailPage: React.FC = () => {
 
           <button
             onClick={() => navigate('/meetings')}
-            className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+            className="px-3.5 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
           >
             <Calendar className="w-4 h-4" />
             <span>Schedule Meeting</span>
@@ -293,7 +293,7 @@ export const LeadDetailPage: React.FC = () => {
 
           <button
             onClick={() => navigate('/proposals')}
-            className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+            className="px-3.5 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
           >
             <FileText className="w-4 h-4" />
             <span>Create Proposal</span>
@@ -302,14 +302,14 @@ export const LeadDetailPage: React.FC = () => {
           <button
             onClick={fetchAiAudit}
             disabled={loadingAudit}
-            className="px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50"
+            className="px-3.5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>{loadingAudit ? 'Analyzing Needs...' : 'AI Needs & Pitch'}</span>
+            <span>{loadingAudit ? 'Analyzing...' : 'AI Needs & Pitch'}</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs self-start sm:self-center">
           <span className="text-slate-400">Status:</span>
           <span className="px-3 py-1 rounded-full uppercase font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {lead.status}
@@ -330,15 +330,15 @@ export const LeadDetailPage: React.FC = () => {
       )}
 
       {aiAudit && (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/40 p-5 rounded-2xl shadow-2xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 border border-amber-500/40 p-4 sm:p-5 rounded-2xl shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
+              <Sparkles className="w-5 h-5 text-amber-400 flex-shrink-0" />
               <h3 className="font-bold text-white text-sm">
-                AI Commercial Audit & Pitch Intelligence for {lead.name}
+                AI Commercial Audit & Pitch for {lead.name}
               </h3>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between sm:justify-end gap-3">
               <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
                 Deal Value: {aiAudit.estimatedDealValue || '$500 - $1,500'}
               </span>

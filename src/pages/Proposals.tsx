@@ -234,69 +234,119 @@ export const ProposalsPage: React.FC = () => {
             No proposals generated yet. Click "New Proposal" to create one.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="text-xs uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Proposal Title</th>
-                  <th className="py-3 px-4">Lead ID</th>
-                  <th className="py-3 px-4 text-center">Amount</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Public Client Portal</th>
-                  <th className="py-3 px-4 text-right">Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {proposals.map((prop) => (
-                  <tr key={prop.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-white">
-                      {prop.title}
-                      {prop.notes && (
-                        <p className="text-xs text-slate-500 font-normal line-clamp-1 mt-0.5">
-                          {prop.notes}
-                        </p>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-xs text-emerald-400">
-                      {prop.leadId.slice(0, 8)}...
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-white font-mono">
+          <>
+            {/* Mobile Cards (< md) */}
+            <div className="block md:hidden divide-y divide-slate-800/60">
+              {proposals.map((prop) => (
+                <div key={prop.id} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-white text-sm">{prop.title}</h4>
+                      <span className="font-mono text-[11px] text-emerald-400">
+                        Lead: {prop.leadId.slice(0, 8)}...
+                      </span>
+                    </div>
+                    {getStatusBadge(prop.status)}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-slate-400">Total Amount:</span>
+                    <span className="font-bold text-white font-mono text-sm">
                       {prop.currency} {prop.totalAmount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-center">{getStatusBadge(prop.status)}</td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleCopyLink(prop.token)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 border border-slate-700"
-                          title="Copy Public Link"
-                        >
-                          {copiedToken === prop.token ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                          <span>{copiedToken === prop.token ? 'Copied!' : 'Copy Link'}</span>
-                        </button>
-                        <a
-                          href={`/p/${prop.token}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
-                          title="Open Client Portal"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right text-xs text-slate-500 font-mono">
-                      {new Date(prop.createdAt).toLocaleDateString()}
-                    </td>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-900">
+                    <button
+                      onClick={() => handleCopyLink(prop.token)}
+                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1.5 border border-slate-700"
+                    >
+                      {copiedToken === prop.token ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      <span>{copiedToken === prop.token ? 'Copied!' : 'Copy Portal Link'}</span>
+                    </button>
+                    <a
+                      href={`/p/${prop.token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                      title="Open Client Portal"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="text-xs uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Proposal Title</th>
+                    <th className="py-3 px-4">Lead ID</th>
+                    <th className="py-3 px-4 text-center">Amount</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-center">Public Client Portal</th>
+                    <th className="py-3 px-4 text-right">Created</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {proposals.map((prop) => (
+                    <tr key={prop.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-white">
+                        {prop.title}
+                        {prop.notes && (
+                          <p className="text-xs text-slate-500 font-normal line-clamp-1 mt-0.5">
+                            {prop.notes}
+                          </p>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-xs text-emerald-400">
+                        {prop.leadId.slice(0, 8)}...
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold text-white font-mono">
+                        {prop.currency} {prop.totalAmount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-center">{getStatusBadge(prop.status)}</td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleCopyLink(prop.token)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 border border-slate-700"
+                            title="Copy Public Link"
+                          >
+                            {copiedToken === prop.token ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                            <span>{copiedToken === prop.token ? 'Copied!' : 'Copy Link'}</span>
+                          </button>
+                          <a
+                            href={`/p/${prop.token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                            title="Open Client Portal"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right text-xs text-slate-500 font-mono">
+                        {new Date(prop.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -251,7 +251,7 @@ export const LeadFinderPage: React.FC = () => {
       )}
 
       {/* Criteria & Estimator Card */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -393,7 +393,7 @@ export const LeadFinderPage: React.FC = () => {
       </div>
 
       {/* Active & Past Search Jobs */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
             <h2 className="text-lg font-bold text-white">Extraction Jobs & Checkpoints</h2>
@@ -469,8 +469,8 @@ export const LeadFinderPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right text-xs">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-900">
+                      <div className="text-left sm:text-right text-xs">
                         <div className="text-slate-300 font-semibold">
                           <span className="text-emerald-400 font-bold font-mono">+{job.statsNew}</span> new leads
                         </div>
