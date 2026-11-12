@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, getAccessToken } from '../api/client.js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import {
   Users,
   Download,
@@ -12,6 +12,14 @@ import {
   ChevronRight,
   ShieldAlert,
   Globe,
+  Radio,
+  Sparkles,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Zap,
+  Target,
+  RefreshCw,
 } from 'lucide-react';
 
 export const LeadsPage: React.FC = () => {
@@ -23,21 +31,61 @@ export const LeadsPage: React.FC = () => {
   // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [metaFilter, setMetaFilter] = useState<'all' | 'meta' | 'ads' | 'nopixel'>('all');
   const [page, setPage] = useState(1);
 
-  // Email enrichment state
+  // Action statuses
   const [enriching, setEnriching] = useState(false);
-  const [enrichStatus, setEnrichStatus] = useState<string | null>(null);
+  const [scanningMeta, setScanningMeta] = useState(false);
+  const [seedingTestData, setSeedingTestData] = useState(false);
+  const [actionNotice, setActionNotice] = useState<{ msg: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  const handleSeedTestData = async () => {
+    try {
+      setSeedingTestData(true);
+      setActionNotice({ msg: 'Generating realistic test leads with Meta integration, meetings & proposals...', type: 'info' });
+      const res = await api.post<any>('/leads/seed-test-data', {});
+      setActionNotice({
+        msg: `Successfully created ${res.leadsCount} test leads with ${res.meetingsCount} scheduled Google Meet calls and ${res.proposalsCount} proposals!`,
+        type: 'success',
+      });
+      fetchLeads();
+    } catch (err: any) {
+      setActionNotice({ msg: `Failed to seed test data: ${err.message}`, type: 'error' });
+    } finally {
+      setSeedingTestData(false);
+    }
+  };
+
+  const handleScanMetaAll = async () => {
+    try {
+      setScanningMeta(true);
+      setActionNotice({ msg: 'Scanning websites for Meta Pixel, Facebook & Instagram links, and active Ads...', type: 'info' });
+      const res = await api.post<any>('/leads/scan-meta-all', { limit: 50 });
+      setActionNotice({
+        msg: `Meta Intelligence Scan Finished: Checked ${res.scanned} websites, found ${res.metaIntegrated} Meta Integrated brands.`,
+        type: 'success',
+      });
+      fetchLeads();
+    } catch (err: any) {
+      setActionNotice({ msg: `Scan failed: ${err.message}`, type: 'error' });
+    } finally {
+      setScanningMeta(false);
+    }
+  };
 
   const handleEnrichAll = async () => {
     try {
       setEnriching(true);
-      setEnrichStatus('Scraping websites for public emails...');
+      setActionNotice({ msg: 'Scraping websites for public contact emails...', type: 'info' });
       const res = await api.post<any>('/leads/enrich-all', {});
-      setEnrichStatus(`Finished: Scanned ${res.scanned} leads, enriched ${res.enriched} with new emails.`);
+      setActionNotice({
+        msg: `Finished: Scanned ${res.scanned} leads, enriched ${res.enriched} with new verified emails.`,
+        type: 'success',
+      });
       fetchLeads();
     } catch (err: any) {
-      setEnrichStatus(`Failed: ${err.message}`);
+      setActionNotice({ msg: `Enrichment failed: ${err.message}`, type: 'error' });
     } finally {
       setEnriching(false);
     }
@@ -50,9 +98,19 @@ export const LeadsPage: React.FC = () => {
       if (statusFilter !== 'all') query += `&status=${statusFilter}`;
       if (search) query += `&search=${encodeURIComponent(search)}`;
 
+      if (metaFilter === 'meta') {
+        query += '&metaIntegrated=true';
+      } else if (metaFilter === 'ads') {
+        query += '&runningAds=true';
+      } else if (metaFilter === 'nopixel') {
+        query += '&tag=Missing Meta Pixel';
+      }
+
       const res = await api.get<any>(query);
-      setLeads(res.items || []);
-      setTotal(res.total || 0);
+      const items = res?.items || (Array.isArray(res?.data) ? res.data : []);
+      const totalCount = res?.total || items.length;
+      setLeads(items);
+      setTotal(totalCount);
     } catch (err) {
       console.error(err);
     } finally {
@@ -62,7 +120,7 @@ export const LeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, metaFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +141,12 @@ export const LeadsPage: React.FC = () => {
 
   const handleExportExcel = () => {
     let url = '/api/leads/export.xlsx';
-    if (statusFilter !== 'all') url += `?status=${statusFilter}`;
-    // Trigger direct download with auth
+    const params = [];
+    if (statusFilter !== 'all') params.push(`status=${statusFilter}`);
+    if (metaFilter === 'meta') params.push('metaIntegrated=true');
+    if (metaFilter === 'ads') params.push('runningAds=true');
+    if (params.length > 0) url += `?${params.join('&')}`;
+
     const token = getAccessToken();
     fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
@@ -94,7 +156,7 @@ export const LeadsPage: React.FC = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = `leads_export_${Date.now()}.xlsx`;
+        a.download = `leads_meta_export_${Date.now()}.xlsx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -102,85 +164,199 @@ export const LeadsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
             <Users className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
-            Leads Directory & Outreach
+            Leads Directory &amp; Meta Intelligence
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Global verified leads with instant WhatsApp, direct calling, and Excel export
+            Global verified leads with instant Meta Pixel detection, active ad tracking, WhatsApp &amp; Excel export
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Action Buttons Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Quick Seed Button for instant testing */}
+          <button
+            onClick={handleSeedTestData}
+            disabled={seedingTestData}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-3.5 py-2 rounded-xl text-xs shadow-lg shadow-emerald-900/30 transition disabled:opacity-50"
+            title="Seed high-quality test leads with Google Meet meetings and proposals"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+            <span>{seedingTestData ? 'Generating...' : 'Seed Test Leads & Meetings'}</span>
+          </button>
+
+          {/* Scan Meta & Ads */}
+          <button
+            onClick={handleScanMetaAll}
+            disabled={scanningMeta}
+            className="flex items-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-3 py-2 rounded-xl text-xs transition disabled:opacity-50"
+            title="Scan websites for Meta Pixel, Facebook, Instagram & Ads"
+          >
+            <Radio className={`w-3.5 h-3.5 text-blue-400 ${scanningMeta ? 'animate-pulse' : ''}`} />
+            <span>{scanningMeta ? 'Scanning Meta...' : 'Scan Meta & Ads'}</span>
+          </button>
+
+          {/* Find Emails */}
           <button
             onClick={handleEnrichAll}
             disabled={enriching}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold px-3.5 py-2 rounded-xl text-xs sm:text-sm transition disabled:opacity-50"
-            title="Scan websites of leads to find and update public email addresses"
+            className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold px-3 py-2 rounded-xl text-xs transition disabled:opacity-50"
+            title="Scan websites for public contact emails"
           >
-            <Globe className="w-4 h-4 text-purple-400" />
+            <Globe className="w-3.5 h-3.5 text-purple-400" />
             <span>{enriching ? 'Finding...' : 'Find Emails'}</span>
           </button>
 
+          {/* Export */}
           <button
             onClick={handleExportExcel}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-900/20 transition"
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-3 py-2 rounded-xl text-xs transition"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
             <span>Export (.xlsx)</span>
           </button>
         </div>
       </div>
 
-      {enrichStatus && (
-        <div className="bg-slate-900 border border-purple-500/30 px-4 py-3 rounded-xl text-xs text-purple-200 flex items-center justify-between shadow-lg">
-          <span>{enrichStatus}</span>
-          <button onClick={() => setEnrichStatus(null)} className="text-slate-400 hover:text-white px-2">✕</button>
+      {/* Action Notification Alert */}
+      {actionNotice && (
+        <div
+          className={`p-3.5 rounded-xl text-xs flex items-center justify-between border shadow-lg ${
+            actionNotice.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : actionNotice.type === 'error'
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{actionNotice.msg}</span>
+          </div>
+          <button onClick={() => setActionNotice(null)} className="px-2 text-slate-400 hover:text-white">✕</button>
         </div>
       )}
 
       {/* Filter and Search Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search leads by business name, address, or website..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-          />
-        </form>
-
-        <div className="flex items-center gap-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
+        {/* Meta & Ads Quick Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+          <span className="text-slate-400 flex items-center gap-1.5 mr-1 flex-shrink-0">
+            <Filter className="w-3.5 h-3.5 text-emerald-400" />
+            Category Filter:
+          </span>
+          <button
+            onClick={() => {
+              setMetaFilter('all');
               setPage(1);
             }}
-            className="w-full sm:w-auto bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+            className={`px-3 py-1.5 rounded-xl transition flex-shrink-0 ${
+              metaFilter === 'all'
+                ? 'bg-emerald-500 text-slate-950 font-bold'
+                : 'bg-slate-800 text-slate-400 hover:text-white'
+            }`}
           >
-            <option value="all">Status: All Leads</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="interested">Interested</option>
-            <option value="meeting">Meeting Scheduled</option>
-            <option value="proposal">Proposal Sent</option>
-            <option value="won">Won / Closed</option>
-            <option value="lost">Lost</option>
-          </select>
+            All Leads ({total})
+          </button>
+
+          <button
+            onClick={() => {
+              setMetaFilter('meta');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 flex-shrink-0 ${
+              metaFilter === 'meta'
+                ? 'bg-blue-600 text-white font-bold'
+                : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5" />
+            <span>Meta Integrated Brands</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setMetaFilter('ads');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 flex-shrink-0 ${
+              metaFilter === 'ads'
+                ? 'bg-amber-600 text-white font-bold'
+                : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20'
+            }`}
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>Active Meta Ads (FB/IG)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setMetaFilter('nopixel');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 flex-shrink-0 ${
+              metaFilter === 'nopixel'
+                ? 'bg-rose-600 text-white font-bold'
+                : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Missing Meta Pixel (Pitch Angle)</span>
+          </button>
+        </div>
+
+        {/* Search & Pipeline status */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 relative">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search leads by business name, city, website, or keywords..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </form>
+
+          <div className="flex items-center gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full sm:w-auto bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+            >
+              <option value="all">Pipeline: All Stages</option>
+              <option value="new">New Lead</option>
+              <option value="contacted">Contacted</option>
+              <option value="interested">Interested</option>
+              <option value="meeting">Meeting Scheduled</option>
+              <option value="proposal">Proposal Sent</option>
+              <option value="won">Won / Closed</option>
+              <option value="lost">Lost</option>
+            </select>
+
+            <button
+              onClick={fetchLeads}
+              className="p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 hover:text-white"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Leads Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 text-xs text-slate-400">
-          <span>Found {total} Total Business Leads</span>
+          <span>Found <strong className="text-white">{total}</strong> Business Leads</span>
           <span>Showing Page {page}</span>
         </div>
 
@@ -190,8 +366,15 @@ export const LeadsPage: React.FC = () => {
             Loading leads directory...
           </div>
         ) : leads.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">
-            No leads found matching your criteria. Use Lead Finder to scrape businesses!
+          <div className="py-16 text-center text-slate-500 space-y-3">
+            <p>No leads found matching your criteria.</p>
+            <button
+              onClick={handleSeedTestData}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-lg shadow-emerald-900/20"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Generate Test Leads &amp; Meetings Now</span>
+            </button>
           </div>
         ) : (
           <>
@@ -205,6 +388,10 @@ export const LeadsPage: React.FC = () => {
                       `Hi ${lead.name}, I noticed your business in ${lead.city} and would love to connect.`
                     )}`
                   : null;
+                const tags = Array.isArray(lead.tags) ? (lead.tags as string[]) : [];
+                const isMetaIntegrated = tags.includes('Meta Integrated') || tags.includes('Meta Pixel Active') || lead.adsInfo?.pixelDetected;
+                const isAdsRunning = tags.includes('Meta Ads Active') || lead.adsInfo?.running;
+                const adLibraryUrl = lead.adsInfo?.adLibraryUrl || `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&q=${encodeURIComponent(lead.name)}`;
 
                 return (
                   <div
@@ -217,6 +404,11 @@ export const LeadsPage: React.FC = () => {
                         <div className="text-xs text-slate-400 mt-0.5">
                           📍 {lead.city}, {lead.country}
                         </div>
+                        {lead.categoryName && (
+                          <span className="text-[10px] text-emerald-400 font-mono block mt-0.5 truncate">
+                            {lead.categoryName}
+                          </span>
+                        )}
                       </div>
                       <select
                         value={lead.status}
@@ -231,6 +423,37 @@ export const LeadsPage: React.FC = () => {
                         <option value="won">Won</option>
                         <option value="lost">Lost</option>
                       </select>
+                    </div>
+
+                    {/* Meta Intelligence Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {isMetaIntegrated && (
+                        <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded text-[10px] font-semibold flex items-center gap-1">
+                          <Radio className="w-2.5 h-2.5 text-blue-400" />
+                          Meta Integrated
+                        </span>
+                      )}
+                      {isAdsRunning && (
+                        <a
+                          href={adLibraryUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 rounded text-[10px] font-semibold flex items-center gap-1 transition"
+                          title="View Live Ads in Meta Ad Library"
+                        >
+                          <Target className="w-2.5 h-2.5 text-amber-400" />
+                          Meta Ads Active ↗
+                        </a>
+                      )}
+                      {lead.status === 'meeting' && (
+                        <NavLink
+                          to="/meetings"
+                          className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px] font-semibold flex items-center gap-1"
+                        >
+                          <Calendar className="w-2.5 h-2.5" />
+                          Meeting
+                        </NavLink>
+                      )}
                     </div>
 
                     {lead.website ? (
@@ -297,12 +520,12 @@ export const LeadsPage: React.FC = () => {
               <table className="w-full text-left text-sm text-slate-300">
                 <thead className="text-xs uppercase bg-slate-800/40 text-slate-400 border-b border-slate-800">
                   <tr>
-                    <th className="py-3 px-4">Business</th>
-                    <th className="py-3 px-4">Quick Comms (Phone & WhatsApp)</th>
+                    <th className="py-3 px-4">Business &amp; Category</th>
+                    <th className="py-3 px-4">Meta &amp; Ads Intelligence</th>
+                    <th className="py-3 px-4">Quick Outreach</th>
                     <th className="py-3 px-4">Location</th>
-                    <th className="py-3 px-4">Tags</th>
-                    <th className="py-3 px-4">Pipeline Status</th>
-                    <th className="py-3 px-4 text-right">Details</th>
+                    <th className="py-3 px-4">Pipeline Stage</th>
+                    <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-sans">
@@ -311,36 +534,89 @@ export const LeadsPage: React.FC = () => {
                     const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;
                     const waLink = cleanPhone
                       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                          `Hi ${lead.name}, I noticed your business in ${lead.city} and would love to connect.`
+                          `Hi ${lead.name}, I noticed your business in ${lead.city} and would love to connect regarding web systems and scaling.`
                         )}`
                       : null;
+                    const tags = Array.isArray(lead.tags) ? (lead.tags as string[]) : [];
+                    const isMetaIntegrated = tags.includes('Meta Integrated') || tags.includes('Meta Pixel Active') || lead.adsInfo?.pixelDetected;
+                    const isAdsRunning = tags.includes('Meta Ads Active') || lead.adsInfo?.running;
+                    const isMissingPixel = tags.includes('Missing Meta Pixel');
+                    const adLibraryUrl = lead.adsInfo?.adLibraryUrl || `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&q=${encodeURIComponent(lead.name)}`;
 
                     return (
                       <tr key={lead.id} className="hover:bg-slate-800/30 transition text-xs">
-                        {/* Name & Website */}
+                        {/* Name, Category & Website */}
                         <td className="py-3 px-4">
                           <div className="font-bold text-white text-sm">{lead.name}</div>
+                          {lead.categoryName && (
+                            <span className="text-[11px] text-emerald-400 font-mono block mt-0.5 truncate max-w-xs">
+                              {lead.categoryName}
+                            </span>
+                          )}
                           {lead.website ? (
                             <a
                               href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-emerald-400 hover:underline flex items-center gap-1 text-[11px] mt-0.5 truncate max-w-xs"
+                              className="text-slate-400 hover:text-emerald-400 hover:underline flex items-center gap-1 text-[11px] mt-0.5 truncate max-w-xs"
                             >
                               <span>{lead.websiteNorm || lead.website}</span>
-                              <ExternalLink className="w-3 h-3" />
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
                             </a>
                           ) : (
-                            <span className="text-slate-500 text-[11px]">No website listed</span>
+                            <span className="text-slate-500 text-[11px]">No website</span>
                           )}
                           {Array.isArray(lead.emails) && lead.emails.length > 0 ? (
-                            <span className="text-purple-300 font-mono text-[11px] block mt-1 truncate max-w-xs">
+                            <span className="text-purple-300 font-mono text-[11px] block mt-0.5 truncate max-w-xs">
                               ✉️ {lead.emails[0]}
                             </span>
                           ) : null}
                         </td>
 
-                        {/* Communications */}
+                        {/* Meta & Ads Status */}
+                        <td className="py-3 px-4">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap gap-1.5">
+                              {isMetaIntegrated ? (
+                                <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded text-[10px] font-semibold flex items-center gap-1">
+                                  <Radio className="w-2.5 h-2.5 text-blue-400" />
+                                  Meta Integrated
+                                </span>
+                              ) : null}
+
+                              {isAdsRunning ? (
+                                <a
+                                  href={adLibraryUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 rounded text-[10px] font-semibold flex items-center gap-1 transition"
+                                  title="Open Meta Ad Library"
+                                >
+                                  <Target className="w-2.5 h-2.5 text-amber-400" />
+                                  Meta Ads Active ↗
+                                </a>
+                              ) : isMissingPixel ? (
+                                <span className="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded text-[10px] font-semibold">
+                                  Missing Pixel (Pitch)
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 text-[10px]">Standard Lead</span>
+                              )}
+                            </div>
+
+                            {lead.status === 'meeting' && (
+                              <NavLink
+                                to="/meetings"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px] font-semibold hover:bg-indigo-500/30 transition"
+                              >
+                                <Calendar className="w-2.5 h-2.5" />
+                                <span>Meeting Booked</span>
+                              </NavLink>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Quick Communications */}
                         <td className="py-3 px-4">
                           {phone ? (
                             <div className="flex items-center gap-2">
@@ -377,28 +653,6 @@ export const LeadsPage: React.FC = () => {
                           <span className="text-slate-400 block text-[11px]">{lead.country}</span>
                         </td>
 
-                        {/* Tags */}
-                        <td className="py-3 px-4">
-                          <div className="flex flex-wrap gap-1">
-                            {Array.isArray(lead.tags) && lead.tags.length > 0 ? (
-                              lead.tags.map((t: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                                    t === 'Running Ads'
-                                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                      : 'bg-slate-800 text-slate-400'
-                                  }`}
-                                >
-                                  {t}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-slate-600">—</span>
-                            )}
-                          </div>
-                        </td>
-
                         {/* Status */}
                         <td className="py-3 px-4">
                           <select
@@ -421,7 +675,7 @@ export const LeadsPage: React.FC = () => {
                           <button
                             onClick={() => navigate(`/leads/${lead.id}`)}
                             className="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition"
-                            title="Open Lead Timeline & Details"
+                            title="Open Lead Intelligence Dossier"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
