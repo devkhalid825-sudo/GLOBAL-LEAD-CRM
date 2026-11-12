@@ -170,59 +170,47 @@ export const LeadsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Editorial Luxury Header matching Figma */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#262626]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-            <Users className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-400" />
-            Leads Directory &amp; Meta Intelligence
+          <h1 className="serif text-3xl sm:text-4xl font-bold tracking-tight text-white">
+            Leads database.
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Global verified leads with instant Meta Pixel detection, active ad tracking, WhatsApp &amp; Excel export
+          <p className="text-sm text-neutral-400 mt-2 font-sans">
+            <span className="mono text-white font-semibold">{total.toLocaleString()}</span> businesses, filtered to what matters today.
           </p>
         </div>
 
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          {/* Quick Seed Button for instant testing */}
+          {/* Quick Seed Button */}
           <button
             onClick={handleSeedTestData}
             disabled={seedingTestData}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-3.5 py-2 rounded-xl text-xs shadow-lg shadow-emerald-900/30 transition disabled:opacity-50"
+            className="btn-solid flex items-center gap-2 text-xs"
             title="Seed high-quality test leads with Google Meet meetings and proposals"
           >
-            <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-            <span>{seedingTestData ? 'Generating...' : 'Seed Test Leads & Meetings'}</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{seedingTestData ? 'Generating...' : 'Seed Test Leads'}</span>
           </button>
 
           {/* Scan Meta & Ads */}
           <button
             onClick={handleScanMetaAll}
             disabled={scanningMeta}
-            className="flex items-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 font-semibold px-3 py-2 rounded-xl text-xs transition disabled:opacity-50"
+            className="btn-ghost flex items-center gap-1.5 text-xs text-neutral-300"
             title="Scan websites for Meta Pixel, Facebook, Instagram & Ads"
           >
-            <Radio className={`w-3.5 h-3.5 text-blue-400 ${scanningMeta ? 'animate-pulse' : ''}`} />
+            <Radio className={`w-3.5 h-3.5 ${scanningMeta ? 'animate-pulse' : ''}`} />
             <span>{scanningMeta ? 'Scanning Meta...' : 'Scan Meta & Ads'}</span>
-          </button>
-
-          {/* Find Emails */}
-          <button
-            onClick={handleEnrichAll}
-            disabled={enriching}
-            className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold px-3 py-2 rounded-xl text-xs transition disabled:opacity-50"
-            title="Scan websites for public contact emails"
-          >
-            <Globe className="w-3.5 h-3.5 text-purple-400" />
-            <span>{enriching ? 'Finding...' : 'Find Emails'}</span>
           </button>
 
           {/* Export */}
           <button
             onClick={handleExportExcel}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-3 py-2 rounded-xl text-xs transition"
+            className="btn-ghost flex items-center gap-1.5 text-xs text-neutral-300"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <Download className="w-3.5 h-3.5" />
             <span>Export (.xlsx)</span>
           </button>
         </div>

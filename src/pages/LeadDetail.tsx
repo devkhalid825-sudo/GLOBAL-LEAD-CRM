@@ -333,8 +333,8 @@ export const LeadDetailPage: React.FC = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">{lead.name}</h1>
-          <p className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+          <h1 className="serif text-2xl sm:text-3xl font-bold text-white tracking-tight truncate">{lead.name}</h1>
+          <p className="text-xs text-neutral-400 flex items-center gap-2 mt-0.5 font-sans">
             <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
             <span className="truncate">
               {lead.address || `${lead.city}, ${lead.country}`}

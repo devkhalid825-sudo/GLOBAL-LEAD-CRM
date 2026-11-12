@@ -352,38 +352,31 @@ export const LeadFinderPage: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Editorial Luxury Header matching Figma */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#262626]">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Compass className="w-7 h-7 text-emerald-400" />
-            Global Lead Finder &amp; Meta Intelligence
+          <h1 className="serif text-3xl sm:text-4xl font-bold tracking-tight text-white">
+            Find new leads.
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Scrape Google Maps &amp; direct businesses across 2km grid cells with auto Meta Pixel, Ads &amp; Email detection
+          <p className="text-sm text-neutral-400 mt-2 font-sans">
+            Pick an engine, set the area, and watch verified leads arrive.
           </p>
         </div>
 
-        {/* Feature Pills & Key Vault Button */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => {
               fetchKeysStatus();
               setShowKeysModal(true);
             }}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600/30 to-blue-600/30 hover:from-purple-600/40 hover:to-blue-600/40 text-purple-300 border border-purple-500/40 flex items-center gap-1.5 transition shadow"
-            title="Manage, hot-swap & inspect live API keys without rebooting server"
+            className="btn-ghost text-xs flex items-center gap-2"
           >
-            <KeyRound className="w-4 h-4 text-purple-400" />
-            <span>⚡ API Keys &amp; Quota Vault</span>
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Hot-reload API vault</span>
           </button>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400" />
-            Meta &amp; Google Ads Intel
-          </span>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            Auto Multi-Key Hot-Swap
+          <span className="pill-luxury on">
+            Meta &amp; Google Ads Active
           </span>
         </div>
       </div>

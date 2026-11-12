@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthProvider.js';
-import { LogOut, Menu, Shield, Zap, Compass, User, ShieldCheck } from 'lucide-react';
+import { LogOut, Menu, ShieldCheck, Search } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { TwoFactorModal } from '../auth/TwoFactorModal.js';
 
@@ -11,77 +11,111 @@ interface TopbarProps {
 export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
   const { user, logout } = useAuth();
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [clock, setClock] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => setClock(new Date().toLocaleTimeString('en-GB'));
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const navLinks = [
+    { label: 'Dashboard', to: '/dashboard' },
+    { label: 'Lead finder', to: '/finder' },
+    { label: 'Leads', to: '/leads' },
+    { label: 'Meetings', to: '/meetings' },
+  ];
 
   return (
     <>
-      <header className="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between px-4 sm:px-6 z-10 select-none">
-        <div className="flex items-center gap-3">
-          {onToggleMenu && (
+      <header className="sticky top-0 z-30 bg-black/95 backdrop-blur-md border-b border-[#262626] select-none">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Logo & Mobile Menu Toggle */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {onToggleMenu && (
+              <button
+                onClick={onToggleMenu}
+                className="lg:hidden p-2 text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-xl transition"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
+
+            <NavLink to="/dashboard" className="serif font-bold text-lg sm:text-xl tracking-[0.12em] text-white">
+              GLOBAL CRM
+            </NavLink>
+          </div>
+
+          {/* Desktop Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-1 overflow-x-auto flex-1 max-w-xl">
+            {navLinks.map((tab) => (
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                className={({ isActive }) =>
+                  `px-3.5 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#121212] text-white shadow-[inset_0_0_0_1px_#262626]'
+                      : 'text-neutral-400 hover:text-white'
+                  }`
+                }
+              >
+                {tab.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Right Controls: Search, Live Clock, 2FA, Avatar */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Search leads Cmd+K button */}
             <button
-              onClick={onToggleMenu}
-              className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
-              aria-label="Open navigation menu"
+              onClick={() => {
+                const el = document.getElementById('search-input');
+                if (el) el.focus();
+              }}
+              className="hidden xl:flex items-center justify-between gap-4 bg-[#0A0A0A] border border-[#262626] rounded-xl px-3.5 py-1.5 text-xs text-neutral-500 hover:text-neutral-300 hover:border-neutral-700 transition min-w-[190px]"
             >
-              <Menu className="w-5 h-5" />
+              <span>Search leads…</span>
+              <span className="mono text-[11px] px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
+                ⌘K
+              </span>
             </button>
-          )}
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Meta Engine Online
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 sm:gap-4">
-          <NavLink
-            to="/finder"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs font-semibold transition"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>New Lead Search</span>
-          </NavLink>
-
-          <button
-            onClick={() => setShow2FAModal(true)}
-            title="Two-Factor Security & WhatsApp Backup Settings"
-            className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition ${
-              user?.twoFactorEnabled
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
-                : 'bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/20'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">{user?.twoFactorEnabled ? '2FA Active' : 'Setup 2FA'}</span>
-          </button>
-
-          <div className="h-5 w-[1px] bg-slate-800 hidden sm:block" />
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 text-emerald-400 border border-slate-700/80 flex items-center justify-center font-bold text-xs flex-shrink-0 shadow">
-              {user?.name?.slice(0, 2).toUpperCase() || 'AD'}
+            {/* Live Clock with pulsing dot */}
+            <div className="hidden sm:flex items-center gap-2 text-neutral-400 text-xs">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="mono text-[11px]">{clock || '00:00:00'}</span>
             </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-xs font-bold text-white leading-tight">
-                {user?.name}
-              </div>
-              <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                <span className="truncate max-w-[140px]">{user?.email}</span>
-                <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-mono uppercase text-[9px] font-bold">
-                  {user?.role}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          <button
-            onClick={logout}
-            title="Sign out of CRM"
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+            {/* 2FA Security Pill */}
+            <button
+              onClick={() => setShow2FAModal(true)}
+              title="Two-Factor Security & WhatsApp Backup Settings"
+              className={`pill-luxury ${user?.twoFactorEnabled ? 'on' : ''}`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+              <span>{user?.twoFactorEnabled ? '2FA Active' : 'Setup 2FA'}</span>
+            </button>
+
+            {/* User Avatar Circle */}
+            <div
+              className="w-8 h-8 rounded-full border border-[#262626] bg-[#121212] text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow cursor-pointer hover:border-neutral-500 transition"
+              title={`${user?.name} (${user?.role})`}
+            >
+              {user?.name?.slice(0, 2).toUpperCase() || 'AK'}
+            </div>
+
+            {/* Sign Out */}
+            <button
+              onClick={logout}
+              title="Sign out of CRM"
+              className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 

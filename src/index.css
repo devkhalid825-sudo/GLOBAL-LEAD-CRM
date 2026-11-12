@@ -3,16 +3,105 @@
 @tailwind utilities;
 
 :root {
+  --bg: #000000;
+  --s1: #0A0A0A;
+  --s2: #121212;
+  --bd: #262626;
+  --hl: rgba(255, 255, 255, 0.12);
+  --tx: #FFFFFF;
+  --mu: #A3A3A3;
+  --mu2: #737373;
+  --row: #171717;
+  --btn: #FFFFFF;
+  --btnt: #000000;
+  --sh: 0 20px 40px -15px rgba(0, 0, 0, 0.8);
   color-scheme: dark;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: var(--bg);
+  color: var(--tx);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.serif {
+  font-family: 'Lora', Georgia, serif;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 500;
+}
+
+/* Luxury Monochrome Cards */
+.card-luxury {
+  background: var(--s1);
+  border: 1px solid var(--hl);
+  border-radius: 20px;
+  box-shadow: var(--sh);
+}
+
+/* Luxury Monochrome Buttons */
+.btn-solid {
+  background: var(--btn);
+  color: var(--btnt);
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+.btn-solid:hover {
+  opacity: 0.88;
+}
+
+.btn-ghost {
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+.btn-ghost:hover {
+  border-color: var(--mu);
+}
+
+/* Monochrome Filter & Status Pills */
+.pill-luxury {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--bd);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--mu);
+  background: var(--s2);
+  transition: all 0.15s ease-out;
+  cursor: pointer;
+}
+.pill-luxury:hover {
+  color: var(--tx);
+  border-color: var(--mu);
+}
+.pill-luxury.on {
+  background: var(--btn);
+  color: var(--btnt);
+  border-color: var(--btn);
+  font-weight: 600;
 }
 
 /* Custom modern scrollbars */
@@ -22,20 +111,20 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--bd);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--mu2);
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1e293b #020617;
+  scrollbar-color: var(--bd) var(--bg);
 }

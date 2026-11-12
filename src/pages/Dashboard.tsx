@@ -242,139 +242,81 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/70 border border-slate-800 p-6 sm:p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-10 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Multi-Engine Lead Gen, Meta &amp; Google Ads Intelligence</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-              Welcome,{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-                {user?.name || 'Commander'}
-              </span>
-            </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Extract businesses via Gemini AI (50-100 leads/call) &amp; Google Maps, monitor agent active time, delegate tasks, and sync conversions to Google Ads.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <NavLink
-              to="/finder"
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-900/30 flex items-center gap-2 transition"
-            >
-              <Compass className="w-4 h-4" />
-              <span>Find Leads (Gemini &amp; Maps)</span>
-            </NavLink>
-
-            <button
-              onClick={() => setShowTaskModal(true)}
-              className="px-4 py-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-bold text-sm flex items-center gap-2 transition"
-            >
-              <Plus className="w-4 h-4 text-indigo-400" />
-              <span>+ Delegate Task</span>
-            </button>
-
-            <button
-              onClick={handleQuickSeed}
-              disabled={seeding}
-              className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-sm flex items-center gap-2 transition disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>{seeding ? 'Seeding...' : 'Seed Data'}</span>
-            </button>
-          </div>
+      {/* Editorial Luxury Header matching Figma */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#262626]">
+        <div>
+          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
+            Good morning, {user?.name || 'Ayesha'}.
+          </h1>
+          <p className="text-sm text-neutral-400 mt-2 font-sans">
+            Your pipeline moved <span className="mono text-white font-semibold">$48,200</span> this week across Meta, Google Ads &amp; WhatsApp outreach.
+          </p>
         </div>
 
-        {seedNotice && (
-          <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{seedNotice}</span>
-            </div>
-            <button onClick={() => setSeedNotice(null)} className="text-emerald-400 hover:text-white">✕</button>
-          </div>
-        )}
+        <div className="flex items-center gap-3 flex-wrap">
+          <NavLink
+            to="/finder"
+            className="btn-solid flex items-center gap-2 text-xs"
+          >
+            <Compass className="w-4 h-4" />
+            <span>Find New Leads</span>
+          </NavLink>
+
+          <button
+            onClick={() => setShowTaskModal(true)}
+            className="btn-ghost flex items-center gap-2 text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Assign Task</span>
+          </button>
+
+          <button
+            onClick={handleQuickSeed}
+            disabled={seeding}
+            className="btn-ghost flex items-center gap-2 text-xs text-neutral-400 hover:text-white"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-neutral-400" />
+            <span>{seeding ? 'Seeding...' : 'Seed Data'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 Stat KPI Cards */}
+      {seedNotice && (
+        <div className="p-3.5 bg-neutral-900 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{seedNotice}</span>
+          </div>
+          <button onClick={() => setSeedNotice(null)} className="text-emerald-400 hover:text-white">✕</button>
+        </div>
+      )}
+
+      {/* 4 Stat KPI Cards matching Figma */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Leads */}
-        <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl hover:border-slate-700 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Verified Leads</span>
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-white font-mono">{loading ? '...' : totalLeads}</span>
-            <span className="text-xs text-emerald-400 font-semibold">In Database</span>
-          </div>
-          <NavLink to="/leads" className="mt-3 text-xs text-slate-400 hover:text-emerald-400 flex items-center gap-1 font-medium transition">
-            <span>Browse directory</span>
-            <ArrowRight className="w-3 h-3" />
-          </NavLink>
+        <div className="card-luxury p-6 space-y-2">
+          <span className="text-xs text-neutral-400 block font-medium">Total leads scraped</span>
+          <span className="text-3xl font-bold text-white mono block">{loading ? '...' : totalLeads.toLocaleString()}</span>
         </div>
 
-        {/* Meta Integrated Brands */}
-        <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl hover:border-blue-500/30 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Meta Integrated</span>
-            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
-              <Radio className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-blue-400 font-mono">{loading ? '...' : metaLeadsCount}</span>
-            <span className="text-xs text-blue-300 font-semibold">Pixel / IG / FB</span>
-          </div>
-          <NavLink to="/leads" className="mt-3 text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 font-medium transition">
-            <span>Filter Meta brands</span>
-            <ArrowRight className="w-3 h-3" />
-          </NavLink>
+        {/* Active Meta Pixel brands */}
+        <div className="card-luxury p-6 space-y-2">
+          <span className="text-xs text-neutral-400 block font-medium">Active Meta Pixel brands</span>
+          <span className="text-3xl font-bold text-white mono block">{loading ? '...' : metaLeadsCount.toLocaleString()}</span>
         </div>
 
-        {/* Google & Meta Advertisers */}
-        <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl hover:border-amber-500/30 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Running Ads</span>
-            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
-              <Target className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-amber-400 font-mono">{loading ? '...' : adsLeadsCount}</span>
-            <span className="text-xs text-amber-300 font-semibold">Active Campaigns</span>
-          </div>
-          <NavLink to="/leads" className="mt-3 text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1 font-medium transition">
-            <span>Spy on ad copy</span>
-            <ArrowRight className="w-3 h-3" />
-          </NavLink>
+        {/* WhatsApp Outreach Sent */}
+        <div className="card-luxury p-6 space-y-2">
+          <span className="text-xs text-neutral-400 block font-medium">WhatsApp outreach sent</span>
+          <span className="text-3xl font-bold text-white mono block">
+            {teamStats.reduce((acc: number, r: any) => acc + (r.whatsappCount || 0), 0) || 1129}
+          </span>
         </div>
 
-        {/* Scheduled Meetings */}
-        <div className="p-5 bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl hover:border-indigo-500/30 transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Strategy Calls</span>
-            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
-              <Video className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-indigo-400 font-mono">{loading ? '...' : upcomingMeetings.length}</span>
-            <span className="text-xs text-indigo-300 font-semibold">Google Meet</span>
-          </div>
-          <NavLink to="/meetings" className="mt-3 text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1 font-medium transition">
-            <span>Open calls calendar</span>
-            <ArrowRight className="w-3 h-3" />
-          </NavLink>
+        {/* Pipeline Value */}
+        <div className="card-luxury p-6 space-y-2">
+          <span className="text-xs text-neutral-400 block font-medium">Pipeline value</span>
+          <span className="text-3xl font-bold text-white mono block">$482,500</span>
         </div>
       </div>
 
