@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, pass: string, twoFactorCode?: string) => Promise<{ requires2FA?: boolean; tempToken?: string }>;
   verify2FA: (tempToken: string, code: string) => Promise<void>;
+  loginWithWhatsAppOtp: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -73,6 +74,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
+  const loginWithWhatsAppOtp = async (phone: string, code: string) => {
+    const res = await api.post<{ user: UserDTO; accessToken: string }>('/auth/whatsapp/verify-otp', {
+      phone,
+      code,
+    });
+
+    if (res?.accessToken) {
+      setAccessToken(res.accessToken);
+      setUser(res.user);
+    }
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -88,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, verify2FA, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, verify2FA, loginWithWhatsAppOtp, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
