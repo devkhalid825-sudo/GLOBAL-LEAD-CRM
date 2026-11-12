@@ -19,7 +19,13 @@ import {
   Briefcase,
   ExternalLink,
   Eye,
+  Mic,
+  Video,
+  RefreshCw,
+  Copy,
 } from 'lucide-react';
+import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
+import { VoiceNoteRecorder, VoiceNotePlayer } from '../components/timeline/VoiceNoteRecorder.js';
 
 export const LeadDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +65,52 @@ export const LeadDetailPage: React.FC = () => {
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
   const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
   const [showWebPreview, setShowWebPreview] = useState(false);
+
+  // Ad Preview & Strategy Meeting states
+  const [showAdPreviewModal, setShowAdPreviewModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [meetingTitle, setMeetingTitle] = useState('Discovery & Growth Strategy Session');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingMeetLink, setMeetingMeetLink] = useState('');
+  const [meetingNotes, setMeetingNotes] = useState('');
+  const [schedulingMeeting, setSchedulingMeeting] = useState(false);
+  const [meetingNotice, setMeetingNotice] = useState<string | null>(null);
+  const [copiedMeetLink, setCopiedMeetLink] = useState(false);
+
+  const openScheduleMeetingModal = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz';
+    const pick = (len: number) =>
+      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    setMeetingMeetLink(`https://meet.google.com/${pick(3)}-${pick(4)}-${pick(3)}`);
+
+    const d = new Date();
+    d.setHours(d.getHours() + 2, 0, 0, 0);
+    const localIso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setMeetingDate(localIso);
+    setShowScheduleModal(true);
+  };
+
+  const handleScheduleMeeting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!meetingDate || !meetingTitle || !id) return;
+    setSchedulingMeeting(true);
+    try {
+      await api.post('/meetings', {
+        leadId: id,
+        title: meetingTitle,
+        startTime: new Date(meetingDate).toISOString(),
+        meetLink: meetingMeetLink.trim() || undefined,
+        notes: meetingNotes,
+      });
+      setShowScheduleModal(false);
+      setMeetingNotice(`Strategy Call scheduled! Video link: ${meetingMeetLink}`);
+      fetchLeadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to schedule meeting');
+    } finally {
+      setSchedulingMeeting(false);
+    }
+  };
 
   const fetchAiAudit = async () => {
     if (!id) return;
@@ -290,11 +342,11 @@ export const LeadDetailPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigate('/meetings')}
-            className="px-3.5 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            onClick={openScheduleMeetingModal}
+            className="px-3.5 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow"
           >
-            <Calendar className="w-4 h-4" />
-            <span>Schedule Meeting</span>
+            <Calendar className="w-4 h-4 text-indigo-400" />
+            <span>Schedule Strategy Call</span>
           </button>
 
           <button
@@ -323,6 +375,16 @@ export const LeadDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {meetingNotice && (
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{meetingNotice}</span>
+          </div>
+          <button onClick={() => setMeetingNotice(null)} className="text-emerald-400 hover:text-white px-2">✕</button>
+        </div>
+      )}
+
       {/* Live Ad Spy & Online Store Inspector */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
         <div className="flex items-center gap-2">
@@ -333,18 +395,28 @@ export const LeadDetailPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Live Meta Ad Library Viewer */}
+          {/* In-App Live Ad Preview Modal Trigger */}
+          <button
+            onClick={() => setShowAdPreviewModal(true)}
+            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600/30 to-purple-600/30 hover:from-blue-600/40 hover:to-purple-600/40 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow"
+            title="Inspect simulated live Instagram, Facebook & Google search ad creatives right inside CRM"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <span>👁️ Live Ad Creative & Spy Preview</span>
+          </button>
+
+          {/* Live Meta Ad Library External Link */}
           <a
             href={`https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=${encodeURIComponent(
               lead.name
             )}&search_type=keyword_unordered&media_type=all`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
-            title="Search and view live video & photo ads running on Meta for this business"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+            title="Search live video & photo ads in Meta Ad Library"
           >
-            <span>👁️ View Live Meta Ads</span>
-            <ExternalLink className="w-3 h-3" />
+            <span>Meta Ad Library</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
 
           {/* Google Ads Transparency */}
@@ -652,69 +724,125 @@ export const LeadDetailPage: React.FC = () => {
 
         {/* Right Column: Unified Timeline & Activities */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Note Input Box */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
-            <form onSubmit={handleAddNote} className="space-y-3">
-              <textarea
-                rows={3}
-                required
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Leave an internal note, pitch reminder, or mention team members with @name..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
-              <div className="flex justify-between items-center">
-                <span className="text-[11px] text-slate-500">
-                  Notes are permanently recorded on this lead's timeline.
-                </span>
-                <button
-                  type="submit"
-                  disabled={submittingNote || !newNote.trim()}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Post Note</span>
-                </button>
-              </div>
-            </form>
+          {/* Note Input Box & Voice Note Recorder */}
+          <div className="space-y-3">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
+              <form onSubmit={handleAddNote} className="space-y-3">
+                <textarea
+                  rows={3}
+                  required
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Leave an internal note, pitch reminder, or mention team members with @name..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] text-slate-500">
+                    Notes & voice recordings are permanently logged on this lead's thread.
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={submittingNote || !newNote.trim()}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Post Note</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Direct Voice Note Audio Recorder */}
+            <VoiceNoteRecorder leadId={id!} onVoiceNoteCreated={fetchLeadData} />
           </div>
 
           {/* Timeline Feed */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-            <h3 className="font-bold text-white text-sm pb-4 border-b border-slate-800">
-              Interaction & Activity Timeline
-            </h3>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <h3 className="font-bold text-white text-sm">
+                Interaction & Activity Timeline
+              </h3>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {timeline.length} event{timeline.length === 1 ? '' : 's'}
+              </span>
+            </div>
 
             {timeline.length === 0 ? (
               <div className="py-8 text-center text-slate-500 text-xs">
-                No timeline events yet. Log a call or add a note above to begin!
+                No timeline events yet. Record a voice note, log a call, or add a note above to begin!
               </div>
             ) : (
               <div className="space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-800">
                 {timeline.map((event) => {
                   const isCall = event.type === 'call';
                   const isNote = event.type === 'note';
+                  const isVoice = event.type === 'voice_note';
+                  const isMeeting = event.type === 'meeting';
 
                   return (
                     <div key={event.id} className="relative flex items-start gap-4 pl-8">
-                      <div className="absolute left-1.5 top-0.5 w-4 h-4 rounded-full bg-slate-800 border-2 border-emerald-400" />
+                      <div className={`absolute left-1.5 top-0.5 w-4 h-4 rounded-full border-2 ${
+                        isVoice
+                          ? 'bg-purple-900 border-purple-400'
+                          : isMeeting
+                          ? 'bg-indigo-900 border-indigo-400'
+                          : isCall
+                          ? 'bg-amber-900 border-amber-400'
+                          : 'bg-slate-800 border-emerald-400'
+                      }`} />
                       <div className="flex-1 bg-slate-950/60 border border-slate-800 rounded-xl p-4">
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-bold text-white">
-                            {event.actorName || 'Team Member'}
+                          <span className="font-bold text-white flex items-center gap-1.5">
+                            {isVoice && <Mic className="w-3.5 h-3.5 text-purple-400" />}
+                            {isMeeting && <Video className="w-3.5 h-3.5 text-indigo-400" />}
+                            {isCall && <Phone className="w-3.5 h-3.5 text-amber-400" />}
+                            <span>{event.actorName || 'Team Member'}</span>
                           </span>
                           <span className="text-slate-500 font-mono text-[11px]">
                             {new Date(event.createdAt).toLocaleString()}
                           </span>
                         </div>
 
-                        {isCall ? (
+                        {isVoice ? (
+                          <div className="mt-2">
+                            <VoiceNotePlayer
+                              audioData={event.payload?.audioData}
+                              durationSec={event.payload?.durationSec}
+                              createdAt={event.createdAt}
+                            />
+                            {event.payload?.notes && (
+                              <p className="text-slate-300 text-xs mt-2 italic">{event.payload.notes}</p>
+                            )}
+                          </div>
+                        ) : isCall ? (
                           <div className="space-y-1 text-xs">
                             <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-amber-500/10 text-amber-400 uppercase">
                               Call: {event.payload?.outcome || 'Connected'}
                             </span>
                             {event.payload?.notes && (
                               <p className="text-slate-300 mt-2">{event.payload.notes}</p>
+                            )}
+                          </div>
+                        ) : isMeeting ? (
+                          <div className="space-y-2 text-xs">
+                            <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-indigo-500/10 text-indigo-400 uppercase">
+                              Meeting: {event.payload?.title || 'Strategy Session'}
+                            </span>
+                            {event.payload?.meetLink && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <a
+                                  href={event.payload.meetLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs flex items-center gap-1.5 font-mono"
+                                >
+                                  <Video className="w-3.5 h-3.5" />
+                                  <span>{event.payload.meetLink}</span>
+                                </a>
+                              </div>
+                            )}
+                            {event.payload?.notes && (
+                              <p className="text-slate-300 mt-1">{event.payload.notes}</p>
                             )}
                           </div>
                         ) : isNote ? (
@@ -930,6 +1058,137 @@ export const LeadDetailPage: React.FC = () => {
             <div className="p-2.5 bg-slate-950 border-t border-slate-800 text-center text-[11px] text-slate-400">
               Tip: If this store restricts in-frame embedding (security policy), click "Open New Tab" above to inspect their live products and checkout flow directly!
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Live Ad Inspector Modal */}
+      {showAdPreviewModal && (
+        <AdPreviewModal lead={lead} onClose={() => setShowAdPreviewModal(false)} />
+      )}
+
+      {/* Schedule Strategy & Video Pitch Call Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Video className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-bold text-white">Schedule Strategy & Pitch Call</h3>
+              </div>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="text-slate-400 hover:text-white px-2 py-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleMeeting} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Meeting Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  placeholder="e.g. Discovery & Growth Strategy Session"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={meetingDate}
+                  onChange={(e) => setMeetingDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase">
+                    Google Meet Room (Pre-Generated 3-4-3 Code)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const chars = 'abcdefghijklmnopqrstuvwxyz';
+                      const pick = (len: number) =>
+                        Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+                      setMeetingMeetLink(`https://meet.google.com/${pick(3)}-${pick(4)}-${pick(3)}`);
+                    }}
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Generate New Code</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={meetingMeetLink}
+                    onChange={(e) => setMeetingMeetLink(e.target.value)}
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    className="flex-1 bg-slate-950 border border-indigo-500/40 rounded-xl px-3 py-2 text-xs text-indigo-300 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (meetingMeetLink) {
+                        navigator.clipboard.writeText(meetingMeetLink);
+                        setCopiedMeetLink(true);
+                        setTimeout(() => setCopiedMeetLink(false), 2000);
+                      }
+                    }}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs flex items-center gap-1 transition"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedMeetLink ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Format: strictly valid 3-4-3 Google Meet link (e.g. meet.google.com/abc-defg-hij). Works instantly without Google Calendar login!
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
+                  Agenda & Notes (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={meetingNotes}
+                  onChange={(e) => setMeetingNotes(e.target.value)}
+                  placeholder="Review client requirements, present digital marketing roadmap & close monthly retainer..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 font-sans"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={schedulingMeeting}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition disabled:opacity-50"
+                >
+                  {schedulingMeeting ? 'Scheduling...' : 'Confirm & Schedule Call'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

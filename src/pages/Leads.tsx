@@ -20,7 +20,9 @@ import {
   Zap,
   Target,
   RefreshCw,
+  Eye,
 } from 'lucide-react';
+import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
 
 export const LeadsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +41,9 @@ export const LeadsPage: React.FC = () => {
   const [scanningMeta, setScanningMeta] = useState(false);
   const [seedingTestData, setSeedingTestData] = useState(false);
   const [actionNotice, setActionNotice] = useState<{ msg: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  // Live In-App Ad Inspector State
+  const [previewAdLead, setPreviewAdLead] = useState<any | null>(null);
 
   const handleSeedTestData = async () => {
     try {
@@ -445,6 +450,14 @@ export const LeadsPage: React.FC = () => {
                           Meta Ads Active ↗
                         </a>
                       )}
+                      <button
+                        onClick={() => setPreviewAdLead(lead)}
+                        className="px-2 py-0.5 bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border border-blue-500/30 text-blue-300 rounded text-[10px] font-semibold flex items-center gap-1 transition"
+                        title="Live simulated ad mockups (Instagram, Facebook & Google Search)"
+                      >
+                        <Eye className="w-2.5 h-2.5 text-blue-400" />
+                        <span>Live Ad Preview</span>
+                      </button>
                       {lead.status === 'meeting' && (
                         <NavLink
                           to="/meetings"
@@ -602,6 +615,15 @@ export const LeadsPage: React.FC = () => {
                               ) : (
                                 <span className="text-slate-500 text-[10px]">Standard Lead</span>
                               )}
+
+                              <button
+                                onClick={() => setPreviewAdLead(lead)}
+                                className="px-2 py-0.5 bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 border border-blue-500/30 text-blue-300 rounded text-[10px] font-semibold flex items-center gap-1 transition shadow"
+                                title="Inspect simulated live Instagram, Facebook & Google Search ad mockups"
+                              >
+                                <Eye className="w-2.5 h-2.5 text-blue-400" />
+                                <span>Preview Ads</span>
+                              </button>
                             </div>
 
                             {lead.status === 'meeting' && (
@@ -710,6 +732,14 @@ export const LeadsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* In-App Live Ad Inspector Modal */}
+      {previewAdLead && (
+        <AdPreviewModal
+          lead={previewAdLead}
+          onClose={() => setPreviewAdLead(null)}
+        />
+      )}
     </div>
   );
 };
