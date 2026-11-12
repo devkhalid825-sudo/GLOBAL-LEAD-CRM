@@ -504,6 +504,12 @@ export const LeadsPage: React.FC = () => {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={() => {
+                                api.post(`/leads/${lead.id}/timeline`, {
+                                  type: 'whatsapp',
+                                  payload: { message: `Initiated WhatsApp outreach with ${phone}` },
+                                }).catch(() => {});
+                              }}
                               className="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center gap-1 text-[11px] transition border border-emerald-500/20"
                             >
                               <MessageCircle className="w-3 h-3" />
@@ -656,6 +662,12 @@ export const LeadsPage: React.FC = () => {
                                   href={waLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
+                                  onClick={() => {
+                                    api.post(`/leads/${lead.id}/timeline`, {
+                                      type: 'whatsapp',
+                                      payload: { message: `Initiated WhatsApp outreach with ${phone}` },
+                                    }).catch(() => {});
+                                  }}
                                   className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg flex items-center gap-1.5 font-medium text-[11px] transition border border-emerald-500/20"
                                   title="Open WhatsApp chat"
                                 >

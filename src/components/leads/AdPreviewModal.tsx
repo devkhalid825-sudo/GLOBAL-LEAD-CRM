@@ -18,12 +18,20 @@ import {
   Search,
   Eye,
   ShieldAlert,
+  Mail,
+  Send,
 } from 'lucide-react';
+import { api } from '../../api/client.js';
 
 interface AdPreviewModalProps {
   lead: {
     id: string;
     name: string;
+    phone?: string;
+    phoneNorm?: string;
+    phones?: string[];
+    email?: string;
+    emails?: string[];
     city?: string;
     country?: string;
     categoryName?: string;
@@ -72,6 +80,36 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
   const pitchScript = isAdsRunning
     ? `Hi ${cleanName}, noticed your active campaigns on Meta & Instagram in ${lead.city || 'your area'}! Your brand positioning is solid, but noticed your landing page conversion tracking could be optimized to cut your Cost Per Acquisition (CPA) by 30%. Would you be open to a quick 2-minute video breakdown of 2 fixes?`
     : `Hi ${cleanName}, noticed your business in ${lead.city || 'your area'} has strong market positioning, but you aren't currently running Meta/Instagram ads to capture local high-intent customers. We designed a sample high-converting ad concept tailored for ${category} that could drive 30-50 qualified inquiries/month. Open to a quick 2-minute preview?`;
+
+  const rawPhone = lead.phoneNorm || (Array.isArray(lead.phones) && lead.phones[0]) || lead.phone;
+  const cleanPhone = rawPhone ? rawPhone.replace(/[^\d]/g, '') : null;
+  const leadEmail = (Array.isArray(lead.emails) && lead.emails[0]) || lead.email || null;
+
+  const waPitchLink = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitchScript)}`
+    : null;
+
+  const mailtoPitchLink = leadEmail
+    ? `mailto:${leadEmail}?subject=${encodeURIComponent(`Growth Opportunity for ${cleanName}`)}&body=${encodeURIComponent(pitchScript)}`
+    : null;
+
+  const handleWhatsAppOutreach = () => {
+    if (lead.id) {
+      api.post(`/leads/${lead.id}/timeline`, {
+        type: 'whatsapp',
+        payload: { message: `Sent Ad Cold Pitch via WhatsApp to ${rawPhone || 'lead'}` },
+      }).catch(() => {});
+    }
+  };
+
+  const handleEmailOutreach = () => {
+    if (lead.id) {
+      api.post(`/leads/${lead.id}/timeline`, {
+        type: 'email',
+        payload: { message: `Initiated Ad Cold Pitch email to ${leadEmail}` },
+      }).catch(() => {});
+    }
+  };
 
   const adLibraryUrl =
     ads.adLibraryUrl ||
@@ -363,6 +401,43 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                   <p className="text-xs text-slate-300 font-mono bg-slate-950/80 p-3 rounded-xl border border-slate-800 leading-relaxed">
                     "{pitchScript}"
                   </p>
+
+                  {/* 1-Click Direct Outreach Launchers */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    {waPitchLink ? (
+                      <a
+                        href={waPitchLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleWhatsAppOutreach}
+                        className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/40"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Direct WhatsApp Pitch</span>
+                      </a>
+                    ) : (
+                      <div className="flex-1 py-2 px-3 bg-slate-900 border border-slate-800 text-slate-500 rounded-xl text-xs font-medium text-center">
+                        Phone unavailable for WA
+                      </div>
+                    )}
+
+                    {mailtoPitchLink && (
+                      <a
+                        href={mailtoPitchLink}
+                        onClick={handleEmailOutreach}
+                        className="py-2 px-3 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
+                      >
+                        <Mail className="w-4 h-4" />
+                        <span>Email Pitch</span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Follow-Up Cadence Reminder */}
+                  <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>⚡ Outreach Tracking:</span>
+                    <span className="text-emerald-400 font-mono">Auto-logged to Lead Timeline</span>
+                  </div>
                 </div>
               </div>
             </div>
