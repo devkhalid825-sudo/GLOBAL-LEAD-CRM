@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --bg: #000000;
-  --s1: #0A0A0A;
-  --s2: #121212;
-  --bd: #262626;
-  --hl: rgba(255, 255, 255, 0.12);
-  --tx: #FFFFFF;
-  --mu: #A3A3A3;
+  --bg: #FFFFFF;
+  --s1: #F8F8F8;
+  --s2: #FFFFFF;
+  --bd: #E5E5E5;
+  --hl: #E5E5E5;
+  --tx: #000000;
+  --mu: #525252;
   --mu2: #737373;
-  --row: #171717;
-  --btn: #FFFFFF;
-  --btnt: #000000;
-  --sh: 0 20px 40px -15px rgba(0, 0, 0, 0.8);
-  color-scheme: dark;
+  --row: #F0F0F0;
+  --btn: #000000;
+  --btnt: #FFFFFF;
+  --sh: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+  color-scheme: light;
   box-sizing: border-box;
 }
 
@@ -43,10 +43,10 @@ body {
   font-weight: 500;
 }
 
-/* Luxury Monochrome Cards */
+/* Luxury Light Monochrome Cards */
 .card-luxury {
   background: var(--s1);
-  border: 1px solid var(--hl);
+  border: 1px solid var(--bd);
   border-radius: 20px;
   box-shadow: var(--sh);
 }
@@ -111,7 +111,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: var(--s1);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -120,11 +120,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--mu2);
+  background: var(--mu);
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--bd) var(--bg);
+  scrollbar-color: var(--bd) var(--s1);
 }

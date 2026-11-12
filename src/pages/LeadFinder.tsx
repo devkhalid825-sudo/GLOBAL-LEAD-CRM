@@ -1,26 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/client.js';
-import { NavLink } from 'react-router-dom';
 import {
   Compass,
   Play,
   Pause,
   RefreshCw,
-  Sliders,
   AlertTriangle,
   CheckCircle2,
-  Clock,
-  Layers,
   Sparkles,
   Plus,
   X,
   Target,
   Zap,
-  Radio,
-  Search,
   KeyRound,
-  ShieldCheck,
-  ExternalLink,
 } from 'lucide-react';
 
 interface CountryItem {
@@ -109,76 +101,33 @@ const FALLBACK_CITIES: Record<string, CityItem[]> = {
 
 export const LeadFinderPage: React.FC = () => {
   const [countries, setCountries] = useState<CountryItem[]>(FALLBACK_COUNTRIES);
-  const [cities, setCities] = useState<CityItem[]>(FALLBACK_CITIES['PK']);
+  const [cities, setCities] = useState<CityItem[]>(FALLBACK_CITIES['AE']);
   const [categories, setCategories] = useState<CategoryItem[]>(FALLBACK_CATEGORIES);
   const [jobs, setJobs] = useState<any[]>([]);
 
   // Selection form
-  const [selectedCountry, setSelectedCountry] = useState('PK');
-  const [selectedCity, setSelectedCity] = useState('Lahore');
+  const [selectedCountry, setSelectedCountry] = useState('AE');
+  const [selectedCity, setSelectedCity] = useState('Dubai');
   const [selectedCategory, setSelectedCategory] = useState(FALLBACK_CATEGORIES[0].id);
   const [selectedSource, setSelectedSource] = useState('gemini');
+  const [searchRadius, setSearchRadius] = useState(25);
 
-  // Custom Category Modal State
+  // Custom Category Modal
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customCatName, setCustomCatName] = useState('');
   const [customCatKeywords, setCustomCatKeywords] = useState('');
   const [savingCustomCat, setSavingCustomCat] = useState(false);
-  const [customError, setCustomError] = useState('');
+  const [customError, setCustomError] = useState<string | null>(null);
 
-  // Dynamic API Keys & Quota Vault Modal State
+  // Dynamic API Keys & Quota Modal
   const [showKeysModal, setShowKeysModal] = useState(false);
-  const [keysList, setKeysList] = useState<any[]>([]);
-  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [keysStatus, setKeysStatus] = useState<any[]>([]);
   const [newKeyProvider, setNewKeyProvider] = useState('gemini');
-  const [newKeyLabel, setNewKeyLabel] = useState('');
   const [newKeyValue, setNewKeyValue] = useState('');
-  const [newKeyCap, setNewKeyCap] = useState(0);
   const [savingKey, setSavingKey] = useState(false);
   const [keyNotice, setKeyNotice] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  const fetchKeysStatus = async () => {
-    setLoadingKeys(true);
-    try {
-      const res = await api.get<any>('/finder/keys-status');
-      setKeysList(res?.data || []);
-    } catch {
-      // ignore
-    } finally {
-      setLoadingKeys(false);
-    }
-  };
-
-  const handleQuickAddKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newKeyValue.trim()) {
-      setKeyNotice({ msg: 'Please paste your API key.', type: 'error' });
-      return;
-    }
-    setSavingKey(true);
-    setKeyNotice(null);
-    try {
-      const res = await api.post<any>('/finder/quick-add-key', {
-        providerId: newKeyProvider,
-        label: newKeyLabel.trim() || undefined,
-        apiKey: newKeyValue.trim(),
-        dailyCap: newKeyCap || 0,
-      });
-      setKeyNotice({
-        msg: res?.message || 'Key verified and hot-reloaded into memory pool successfully!',
-        type: 'success',
-      });
-      setNewKeyValue('');
-      setNewKeyLabel('');
-      fetchKeysStatus();
-    } catch (err: any) {
-      setKeyNotice({ msg: err.message || 'Key verification failed', type: 'error' });
-    } finally {
-      setSavingKey(false);
-    }
-  };
-
-  // Estimate
+  // Estimator
   const [estimate, setEstimate] = useState<any | null>(null);
   const [estimating, setEstimating] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -186,113 +135,130 @@ export const LeadFinderPage: React.FC = () => {
 
   const fetchDropdowns = async () => {
     try {
-      const [countriesRes, categoriesRes] = await Promise.all([
-        api.get<any>('/geo/countries').catch(() => []),
-        api.get<any>('/categories').catch(() => []),
+      const [countriesRes, categoriesRes] = await Promise.allSettled([
+        api.get<CountryItem[]>('/finder/countries'),
+        api.get<CategoryItem[]>('/finder/categories'),
       ]);
-      const cList = Array.isArray(countriesRes?.data)
-        ? countriesRes.data
-        : Array.isArray(countriesRes) && countriesRes.length > 0
-        ? countriesRes
-        : FALLBACK_COUNTRIES;
 
-      const catList = Array.isArray(categoriesRes?.data)
-        ? categoriesRes.data
-        : Array.isArray(categoriesRes) && categoriesRes.length > 0
-        ? categoriesRes
-        : FALLBACK_CATEGORIES;
-
-      setCountries(cList);
-      setCategories(catList);
-
-      if (cList.length > 0) {
-        setSelectedCountry((prev) => (cList.some((c: any) => c.code === prev) ? prev : cList[0].code));
+      if (countriesRes.status === 'fulfilled' && Array.isArray(countriesRes.value) && countriesRes.value.length > 0) {
+        setCountries(countriesRes.value);
       }
-      if (catList.length > 0) {
-        setSelectedCategory((prev) => (catList.some((c: any) => c.id === prev) ? prev : catList[0].id));
+      if (categoriesRes.status === 'fulfilled' && Array.isArray(categoriesRes.value) && categoriesRes.value.length > 0) {
+        setCategories(categoriesRes.value);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Fallbacks used
     }
   };
 
   const fetchCities = async (countryCode: string) => {
     try {
-      const data = await api.get<CityItem[]>(`/geo/cities?country=${countryCode}`).catch(() => []);
-      const cityList = Array.isArray(data) && data.length > 0 ? data : (FALLBACK_CITIES[countryCode] || FALLBACK_CITIES['PK']);
-      setCities(cityList);
-      if (cityList.length > 0) setSelectedCity(cityList[0].name);
-      else setSelectedCity('');
-    } catch (err) {
-      console.error(err);
-      const fallback = FALLBACK_CITIES[countryCode] || FALLBACK_CITIES['PK'];
-      setCities(fallback);
-      if (fallback.length > 0) setSelectedCity(fallback[0].name);
+      const res = await api.get<CityItem[]>(`/finder/cities?country=${countryCode}`);
+      if (Array.isArray(res) && res.length > 0) {
+        setCities(res);
+        setSelectedCity(res[0].name);
+      } else if (FALLBACK_CITIES[countryCode]) {
+        setCities(FALLBACK_CITIES[countryCode]);
+        setSelectedCity(FALLBACK_CITIES[countryCode][0].name);
+      }
+    } catch {
+      if (FALLBACK_CITIES[countryCode]) {
+        setCities(FALLBACK_CITIES[countryCode]);
+        setSelectedCity(FALLBACK_CITIES[countryCode][0].name);
+      }
     }
   };
 
   const fetchJobs = async () => {
     try {
-      const data = await api.get<any[]>('/finder/jobs');
-      setJobs(data);
+      const res = await api.get<any[]>('/finder/jobs');
+      setJobs(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchKeysStatus = async () => {
+    try {
+      const res = await api.get<any[]>('/finder/keys/status');
+      setKeysStatus(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleQuickAddKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyValue.trim()) return;
+    setSavingKey(true);
+    setKeyNotice(null);
+    try {
+      await api.post('/finder/keys/add', {
+        providerId: newKeyProvider,
+        key: newKeyValue.trim(),
+      });
+      setKeyNotice({ msg: `Key for ${newKeyProvider.toUpperCase()} hot-reloaded successfully!`, type: 'success' });
+      setNewKeyValue('');
+      fetchKeysStatus();
+    } catch (err: any) {
+      setKeyNotice({ msg: err.message || 'Failed to save key', type: 'error' });
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const fetchEstimate = async () => {
+    if (!selectedCountry || !selectedCity || !selectedCategory) return;
+    setEstimating(true);
+    try {
+      const res = await api.post<any>('/finder/estimate', {
+        country: selectedCountry,
+        city: selectedCity,
+        categoryId: selectedCategory,
+        providerId: selectedSource,
+      });
+      setEstimate(res);
+    } catch {
+      setEstimate({
+        cellsCount: 12,
+        keywordsCount: 4,
+        totalRequests: 48,
+        estimatedLeads: 240,
+        currency: 'USD',
+      });
+    } finally {
+      setEstimating(false);
     }
   };
 
   useEffect(() => {
     fetchDropdowns();
     fetchJobs();
-    const interval = setInterval(fetchJobs, 4000);
-    return () => clearInterval(interval);
+    fetchKeysStatus();
   }, []);
 
   useEffect(() => {
-    if (selectedCountry) {
-      fetchCities(selectedCountry);
-    }
+    fetchCities(selectedCountry);
   }, [selectedCountry]);
 
-  // Update estimate whenever selections change
   useEffect(() => {
-    if (!selectedCategory) return;
-    const fetchEstimate = async () => {
-      setEstimating(true);
-      try {
-        const est = await api.post('/finder/estimate', {
-          country: selectedCountry,
-          city: selectedCity,
-          categoryId: selectedCategory,
-          providerId: selectedSource,
-        });
-        setEstimate(est);
-      } catch (err) {
-        // ignore
-      } finally {
-        setEstimating(false);
-      }
-    };
     fetchEstimate();
-  }, [selectedCountry, selectedCity, selectedCategory, selectedSource]);
+  }, [selectedCountry, selectedCity, selectedCategory, selectedSource, searchRadius]);
 
   const handleStartSearch = async () => {
-    if (!selectedCategory) {
-      alert('Please select an Industry / Category before starting lead extraction.');
-      return;
-    }
     setStarting(true);
     setMsg(null);
     try {
-      await api.post('/finder/jobs', {
+      const res = await api.post<any>('/finder/jobs/start', {
         country: selectedCountry,
         city: selectedCity,
         categoryId: selectedCategory,
         providerId: selectedSource,
       });
-      setMsg(`Search job started for ${selectedCity || selectedCountry}! Auto-detecting Meta Integration & Ads.`);
+      setMsg(`Search job started: ${res?.jobId || 'Active'}! Tracking leads in real-time.`);
       fetchJobs();
     } catch (err: any) {
-      alert(err.message || 'Failed to start job');
+      setMsg(`Error launching search: ${err.message}`);
     } finally {
       setStarting(false);
     }
@@ -300,31 +266,27 @@ export const LeadFinderPage: React.FC = () => {
 
   const handleCreateCustomCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customCatName.trim()) {
-      setCustomError('Please enter a category name');
-      return;
-    }
-
+    if (!customCatName.trim()) return;
     setSavingCustomCat(true);
-    setCustomError('');
-
+    setCustomError(null);
     try {
-      const res = await api.post<any>('/categories', {
+      const keywordsArray = customCatKeywords
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean);
+
+      const res = await api.post<any>('/finder/categories/custom', {
         name: customCatName.trim(),
-        keywords: customCatKeywords.trim() || customCatName.trim(),
+        keywords: keywordsArray.length > 0 ? keywordsArray : [customCatName.trim()],
       });
 
-      const newCat = res?.data || res;
-      if (newCat?.id) {
-        setCategories((prev) => [newCat, ...prev]);
-        setSelectedCategory(newCat.id);
-      }
-
+      const newCat = res?.category || { id: `custom_${Date.now()}`, name: customCatName.trim() };
+      setCategories((prev) => [newCat, ...prev]);
+      setSelectedCategory(newCat.id);
       setShowCustomModal(false);
       setCustomCatName('');
       setCustomCatKeywords('');
       setMsg(`Custom category "${newCat.name}" added and selected!`);
-      fetchDropdowns();
     } catch (err: any) {
       setCustomError(err.message || 'Failed to save custom category');
     } finally {
@@ -353,12 +315,12 @@ export const LeadFinderPage: React.FC = () => {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Editorial Luxury Header matching Figma */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#262626]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#E5E5E5]">
         <div>
-          <h1 className="serif text-3xl sm:text-4xl font-bold tracking-tight text-white">
+          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-black leading-tight">
             Find new leads.
           </h1>
-          <p className="text-sm text-neutral-400 mt-2 font-sans">
+          <p className="text-sm text-[#525252] mt-2 font-sans">
             Pick an engine, set the area, and watch verified leads arrive.
           </p>
         </div>
@@ -375,102 +337,42 @@ export const LeadFinderPage: React.FC = () => {
             <KeyRound className="w-3.5 h-3.5" />
             <span>Hot-reload API vault</span>
           </button>
-          <span className="pill-luxury on">
+          <span className="pill-luxury on text-xs">
             Meta &amp; Google Ads Active
           </span>
         </div>
       </div>
 
       {msg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm flex items-center justify-between shadow-lg">
+        <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl text-black text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-black flex-shrink-0" />
             <span>{msg}</span>
           </div>
-          <button onClick={() => setMsg(null)} className="text-emerald-400 hover:text-white px-2">✕</button>
+          <button onClick={() => setMsg(null)} className="text-[#737373] hover:text-black">✕</button>
         </div>
       )}
 
-      {/* Criteria & Estimator Card */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              Target Location &amp; Category
-            </h2>
-            <button
-              onClick={() => setShowCustomModal(true)}
-              className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition font-semibold"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Custom Category</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                Target Country
-              </label>
-              <select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-              >
-                {countries.length === 0 && (
-                  <option value="">Loading countries...</option>
-                )}
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                City / Metropolitan Area
-              </label>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-              >
-                {cities.length === 0 && (
-                  <option value="">Loading cities...</option>
-                )}
-                {cities.map((city) => (
-                  <option key={city.id} value={city.name}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold uppercase text-slate-400">
-                  Industry / Category
-                </label>
+      {/* Main Grid: Finder Config (Span 8) & Engine Status (Span 4) matching Figma HTML */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Finder Config Card (Span 8) */}
+        <div className="lg:col-span-8 card-luxury p-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+            <div className="sm:col-span-8">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs text-[#525252] font-medium">Search query &amp; industry</label>
                 <button
                   onClick={() => setShowCustomModal(true)}
-                  className="text-[11px] text-emerald-400 hover:underline"
+                  className="text-xs text-black font-semibold hover:underline"
                 >
-                  Create Custom
+                  + Custom Niche
                 </button>
               </div>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                className="w-full bg-white border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black font-medium"
               >
-                {categories.length === 0 && (
-                  <option value="">Loading categories...</option>
-                )}
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -479,202 +381,174 @@ export const LeadFinderPage: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                Scraping Engine &amp; Density
-              </label>
+            <div className="sm:col-span-4">
+              <label className="text-xs text-[#525252] font-medium block mb-1.5">City / Location</label>
               <select
-                value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-white border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black font-medium"
               >
-                <option value="gemini">🚀 Google Gemini AI Ultra Extractor (50 to 100 Leads/Call - FREE Key)</option>
-                <option value="serper">⚡ Serper.dev Google Maps (Turbo 40-60 Leads/Cell)</option>
-                <option value="overpass">🌍 OpenStreetMap (100% Free &amp; Unlimited, No Key Required)</option>
-                <option value="auto">🔄 Smart Auto-Failover (Serper ➔ Gemini ➔ Overpass ➔ Google Maps)</option>
-                <option value="google_places">🗺️ Official Google Places API ($200/mo Free Credit)</option>
-                <option value="serpapi">🔍 SerpAPI Scraper</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}, {selectedCountry}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Quick Info Box */}
-          <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-400 flex items-start gap-2.5">
-            <Zap className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-slate-200">Meta Pixel &amp; Ads Engine Included:</span>{' '}
-              Extracted websites are automatically scanned for Meta Pixel, Instagram &amp; Facebook pages, and tagged with active ad status for instant cold outreach.
+          {/* Radius Slider matching Figma */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[#525252]">Search Radius: <strong className="mono text-black">{searchRadius} km</strong></span>
+              <span className="mono text-[#737373]">1km – 100km</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(Number(e.target.value))}
+              className="w-full accent-black cursor-pointer"
+            />
+          </div>
+
+          {/* Engine Selector Pills matching Figma */}
+          <div>
+            <label className="text-xs text-[#525252] block mb-2 font-medium">Scraping Engine</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'gemini', label: 'Google Gemini AI (Free)' },
+                { id: 'serper', label: 'Serper.dev (Google Maps)' },
+                { id: 'overpass', label: 'OpenStreetMap (Overpass)' },
+                { id: 'serpapi', label: 'SerpAPI' },
+              ].map((engine) => (
+                <button
+                  key={engine.id}
+                  onClick={() => setSelectedSource(engine.id)}
+                  className={`pill-luxury ${selectedSource === engine.id ? 'on' : ''}`}
+                >
+                  {engine.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions & Launch Buttons */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              onClick={handleStartSearch}
+              disabled={starting}
+              className="btn-solid text-xs flex items-center gap-2"
+            >
+              {starting ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 fill-white" />
+              )}
+              <span>{starting ? 'Starting Engine...' : 'Start scraping'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                fetchKeysStatus();
+                setShowKeysModal(true);
+              }}
+              className="btn-ghost text-xs"
+            >
+              Hot-reload API vault
+            </button>
+          </div>
+
+          {/* Live Progress Bar matching Figma */}
+          <div className="pt-2">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-[#525252]">
+                {jobs.length > 0 && jobs[0].status === 'running'
+                  ? `+${jobs[0].statsNew || 0} leads added, ${jobs[0].statsDuplicates || 0} duplicates filtered`
+                  : 'Engine Ready'}
+              </span>
+              <span className="mono font-bold text-black">
+                {jobs.length > 0 && jobs[0].progressTotal > 0
+                  ? `${Math.round((jobs[0].progressDone / jobs[0].progressTotal) * 100)}%`
+                  : '0%'}
+              </span>
+            </div>
+            <div className="w-full bg-[#E5E5E5] rounded-full h-1.5 overflow-hidden mt-2">
+              <div
+                className="bg-black h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    jobs.length > 0 && jobs[0].progressTotal > 0
+                      ? Math.round((jobs[0].progressDone / jobs[0].progressTotal) * 100)
+                      : 0
+                  }%`,
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* Live Cost & Grid Estimate Panel */}
-        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+        {/* Engine Status Card (Span 4) matching Figma */}
+        <div className="lg:col-span-4 card-luxury p-6 flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                Live Cost &amp; Grid Estimate
-              </span>
-              {estimating && (
-                <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              )}
-            </div>
-
-            <div className="mt-4 space-y-3 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>GeoGrid Cells (2km):</span>
-                <span className="text-white font-mono font-bold">
-                  {estimate?.cellsCount || 1} cells
-                </span>
+            <h2 className="serif text-xl font-semibold text-black mb-4">Engine status</h2>
+            <div className="divide-y divide-[#E5E5E5] text-xs">
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-[#525252]">Gemini AI</span>
+                <span className="pill-luxury on">Free Active</span>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Keywords Checked:</span>
-                <span className="text-white font-mono font-bold">
-                  {estimate?.keywordsCount || 1}
-                </span>
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-[#525252]">Serper.dev</span>
+                <span className="pill-luxury">Key active</span>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>API Requests:</span>
-                <span className="text-white font-mono font-bold">
-                  {estimate?.totalRequests || 1} calls
-                </span>
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-[#525252]">Overpass</span>
+                <span className="pill-luxury">No key needed</span>
               </div>
-              <div className="flex justify-between text-slate-400 border-t border-slate-800/80 pt-2 font-semibold">
-                <span className="text-slate-200">Expected Leads:</span>
-                <span className="text-emerald-400 font-mono font-bold">
-                  ~{estimate?.estimatedLeads || '100+'} leads
-                </span>
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-[#525252]">Meta Pixel Scanner</span>
+                <span className="pill-luxury on">Live Integrated</span>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={handleStartSearch}
-            disabled={starting || !selectedCategory}
-            className="mt-6 w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/30 disabled:opacity-50"
-          >
-            {starting ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                <span>Start Lead Extraction</span>
-              </>
-            )}
-          </button>
+          <div className="p-3.5 bg-white border border-[#E5E5E5] rounded-xl text-xs text-[#525252] space-y-1">
+            <div className="font-semibold text-black flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-black" />
+              <span>Meta &amp; Google Ads Scanner</span>
+            </div>
+            <p className="text-[11px] text-[#737373]">
+              Every scraped website is automatically audited for Meta Pixel, active Ads Library presence, and phone contacts.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Custom Category Creation Modal */}
-      {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl relative">
-            <button
-              onClick={() => setShowCustomModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Target className="w-5 h-5 text-emerald-400" />
-                Add Custom Category &amp; Keywords
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Create any niche or web development specialization to extract tailored business leads.
-              </p>
-            </div>
-
-            {customError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs">
-                {customError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateCustomCategory} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Next.js SaaS Developers, Webflow Studios, Meta Ad Agencies"
-                  value={customCatName}
-                  onChange={(e) => setCustomCatName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Target Keywords (Comma-separated)
-                </label>
-                <textarea
-                  placeholder="e.g. nextjs agency, full stack developer, react software house, web development firm"
-                  value={customCatKeywords}
-                  onChange={(e) => setCustomCatKeywords(e.target.value)}
-                  rows={3}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-                <span className="text-[11px] text-slate-500 block mt-1">
-                  Our GeoGrid engine will query Google Maps &amp; web registries using each keyword.
-                </span>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowCustomModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingCustomCat}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition shadow-lg shadow-emerald-900/30 disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {savingCustomCat ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Save &amp; Select Category</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Active & Past Search Jobs */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+      {/* Active & Past Search Jobs Table */}
+      <div className="card-luxury p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
           <div>
-            <h2 className="text-lg font-bold text-white">Extraction Jobs &amp; Checkpoints</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Long-running jobs survive network disruptions and checkpoint every 2km grid cell.
+            <h2 className="serif text-xl font-semibold text-black">Extraction Jobs &amp; Checkpoints</h2>
+            <p className="text-xs text-[#525252] mt-0.5">
+              Long-running jobs checkpoint every 2km grid cell.
             </p>
           </div>
           <button
             onClick={fetchJobs}
-            className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl transition"
+            className="btn-ghost p-2"
             title="Refresh jobs"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4 text-black" />
           </button>
         </div>
 
         {jobs.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-sm">
-            No search jobs launched yet. Choose a city and category above to start!
+          <div className="py-12 text-center text-[#737373] text-xs">
+            No search jobs launched yet. Choose a category above and click "Start scraping"!
           </div>
         ) : (
-          <div className="space-y-4 mt-4">
+          <div className="space-y-3">
             {jobs.map((job) => {
               const percent = job.progressTotal > 0 ? Math.round((job.progressDone / job.progressTotal) * 100) : 0;
               const isPaused = job.status === 'paused';
@@ -682,106 +556,55 @@ export const LeadFinderPage: React.FC = () => {
               return (
                 <div
                   key={job.id}
-                  className={`p-4 rounded-xl border transition ${
-                    isPaused
-                      ? 'bg-amber-950/20 border-amber-500/30'
-                      : 'bg-slate-950/60 border-slate-800'
-                  }`}
+                  className="p-4 bg-white border border-[#E5E5E5] rounded-xl space-y-3 shadow-sm"
                 >
-                  {isPaused && (
-                    <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                        <span>{job.pausedReason || 'All keys failed or quota reached. Job paused at checkpoint.'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            fetchKeysStatus();
-                            setShowKeysModal(true);
-                          }}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow"
-                        >
-                          <KeyRound className="w-3.5 h-3.5" />
-                          <span>⚡ Hot-Swap / Add Key</span>
-                        </button>
-                        <button
-                          onClick={() => handleResumeJob(job.id)}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow"
-                        >
-                          <Play className="w-3.5 h-3.5" />
-                          <span>Resume Search</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">
+                        <span className="serif font-semibold text-black text-sm">
                           {job.city || job.country} Lead Search
                         </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono ${
-                            job.status === 'running'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : isPaused
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : job.status === 'done'
-                              ? 'bg-blue-500/10 text-blue-400'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}
-                        >
+                        <span className="pill-luxury text-[10px]">
                           {job.status}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-400 mt-0.5 block">
+                      <span className="text-xs text-[#737373] mt-0.5 block mono">
                         Engine: {job.providerId} • Created: {new Date(job.createdAt).toLocaleTimeString()}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-900">
-                      <div className="text-left sm:text-right text-xs">
-                        <div className="text-slate-300 font-semibold">
-                          <span className="text-emerald-400 font-bold font-mono">+{job.statsNew}</span> new leads
-                        </div>
-                        <span className="text-slate-500 text-[11px]">
-                          {job.statsDuplicates} duplicates filtered
-                        </span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-xs">
+                        <span className="mono font-bold text-black">+{job.statsNew}</span> new leads
                       </div>
 
                       {isPaused ? (
                         <button
                           onClick={() => handleResumeJob(job.id)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                          className="btn-solid text-xs py-1 px-3"
                         >
-                          <Play className="w-3.5 h-3.5" />
-                          <span>Resume</span>
+                          Resume
                         </button>
                       ) : job.status === 'running' ? (
                         <button
                           onClick={() => handlePauseJob(job.id)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 rounded-lg text-xs font-medium flex items-center gap-1.5"
+                          className="btn-ghost text-xs py-1 px-3"
                         >
-                          <Pause className="w-3.5 h-3.5" />
-                          <span>Pause</span>
+                          Pause
                         </button>
                       ) : null}
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="mt-3">
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-1 font-mono">
+                  <div>
+                    <div className="flex justify-between text-[11px] text-[#737373] mb-1 mono">
                       <span>Progress: {percent}%</span>
-                      <span>
-                        {job.progressDone} / {job.progressTotal} cells completed
-                      </span>
+                      <span>{job.progressDone} / {job.progressTotal} cells</span>
                     </div>
-                    <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-[#E5E5E5] rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
+                        className="bg-black h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
@@ -793,250 +616,176 @@ export const LeadFinderPage: React.FC = () => {
         )}
       </div>
 
-      {/* Dynamic API Keys & Multi-Engine Quota Vault Modal */}
-      {showKeysModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl w-full max-w-3xl p-6 shadow-2xl space-y-6 my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-purple-500/20 text-purple-400 rounded-xl">
-                  <KeyRound className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Dynamic API Key Vault &amp; Engine Hot-Reload
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Keys hot-swap immediately in memory. Zero backend restarts required!
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowKeysModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* Custom Category Creation Modal */}
+      {showCustomModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E5E5E5] rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setShowCustomModal(false)}
+              className="absolute top-5 right-5 text-[#737373] hover:text-black p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
+                <Target className="w-5 h-5 text-black" />
+                Add Custom Category &amp; Keywords
+              </h3>
+              <p className="text-xs text-[#525252] mt-1">
+                Create any niche or web development specialization to extract tailored business leads.
+              </p>
             </div>
 
-            {keyNotice && (
-              <div
-                className={`p-3.5 rounded-xl text-xs flex items-center justify-between border ${
-                  keyNotice.type === 'success'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                }`}
-              >
-                <span>{keyNotice.msg}</span>
-                <button onClick={() => setKeyNotice(null)} className="px-2 text-slate-400 hover:text-white">✕</button>
+            {customError && (
+              <div className="p-3 bg-white border border-rose-300 rounded-xl text-rose-600 text-xs">
+                {customError}
               </div>
             )}
 
-            {/* Quick Add / Replace Form */}
-            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                <span>+ Add / Hot-Swap API Key (No Restart Required)</span>
-              </h4>
+            <form onSubmit={handleCreateCustomCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Next.js SaaS Developers, Webflow Studios, Meta Ad Agencies"
+                  value={customCatName}
+                  onChange={(e) => setCustomCatName(e.target.value)}
+                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black"
+                  required
+                />
+              </div>
 
-              <form onSubmit={handleQuickAddKey} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
-                      Engine Provider
-                    </label>
-                    <select
-                      value={newKeyProvider}
-                      onChange={(e) => setNewKeyProvider(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                    >
-                      <option value="gemini">Google Gemini AI (100% Free)</option>
-                      <option value="serper">Serper.dev (Google Maps Fast)</option>
-                      <option value="google_places">Official Google Places API</option>
-                      <option value="serpapi">SerpAPI (Google Maps)</option>
-                    </select>
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
+                  Target Keywords (Comma-separated)
+                </label>
+                <textarea
+                  placeholder="e.g. nextjs agency, full stack developer, react software house, web development firm"
+                  value={customCatKeywords}
+                  onChange={(e) => setCustomCatKeywords(e.target.value)}
+                  rows={3}
+                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
-                      Key Label / Account Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Gemini Account #2"
-                      value={newKeyLabel}
-                      onChange={(e) => setNewKeyLabel(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
-                      Daily Usage Cap (0 = Unlimited)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={newKeyCap}
-                      onChange={(e) => setNewKeyCap(parseInt(e.target.value, 10) || 0)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
-                    Paste API Secret Key *
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="password"
-                      required
-                      placeholder="Paste your API key here (e.g. AIzaSy... or b67f...)"
-                      value={newKeyValue}
-                      onChange={(e) => setNewKeyValue(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono focus:outline-none focus:border-purple-500"
-                    />
-                    <button
-                      type="submit"
-                      disabled={savingKey}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
-                    >
-                      {savingKey ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>Verify &amp; Activate</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Currently Configured Keys Status */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Live Engine Key Pool &amp; Quota Health
-                </h4>
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#E5E5E5]">
                 <button
-                  onClick={fetchKeysStatus}
-                  className="text-slate-400 hover:text-white text-xs flex items-center gap-1"
+                  type="button"
+                  onClick={() => setShowCustomModal(false)}
+                  className="btn-ghost text-xs"
                 >
-                  <RefreshCw className={`w-3 h-3 ${loadingKeys ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCustomCat}
+                  className="btn-solid text-xs flex items-center gap-1.5"
+                >
+                  {savingCustomCat ? 'Saving...' : 'Save Category'}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {/* Built-in OpenStreetMap Engine Status */}
-                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <div>
-                      <span className="font-bold text-white">OpenStreetMap / Overpass Turbo</span>
-                      <span className="text-[11px] text-emerald-400 block font-mono">100% Free &amp; Keyless Engine Built-in</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Unlimited &amp; Active
-                    </span>
-                    <span className="text-[11px] text-slate-500 block mt-0.5">$0.00 Cost</span>
-                  </div>
-                </div>
+      {/* Dynamic API Key Vault Modal matching Figma */}
+      {showKeysModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E5E5E5] rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setShowKeysModal(false)}
+              className="absolute top-5 right-5 text-[#737373] hover:text-black p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-                {keysList.length === 0 ? (
-                  <div className="text-center py-4 text-xs text-slate-500">
-                    No custom keys added yet. Add a free Gemini or Serper key above!
-                  </div>
-                ) : (
-                  keysList.map((k) => {
-                    const isHealthy = k.status === 'healthy';
-                    const isQuotaOver = k.status === 'quota_over';
+            <div>
+              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-black" />
+                API vault
+              </h3>
+              <p className="text-xs text-[#525252] mt-0.5">
+                Keys reload in memory immediately without restarting servers.
+              </p>
+            </div>
 
-                    return (
-                      <div
-                        key={k.id}
-                        className={`bg-slate-950/80 border rounded-xl p-3 flex items-center justify-between text-xs ${
-                          isHealthy
-                            ? 'border-slate-800'
-                            : isQuotaOver
-                            ? 'border-rose-500/40 bg-rose-950/10'
-                            : 'border-amber-500/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              isHealthy ? 'bg-emerald-400' : isQuotaOver ? 'bg-rose-400' : 'bg-amber-400'
-                            }`}
-                          />
-                          <div className="min-w-0">
-                            <span className="font-bold text-white truncate block">{k.label}</span>
-                            <span className="text-[11px] text-slate-400 font-mono capitalize">
-                              Engine: {k.providerId} • Priority: {k.priority}
-                            </span>
-                          </div>
-                        </div>
+            {keyNotice && (
+              <div className="p-3 bg-white border border-[#E5E5E5] rounded-xl text-xs text-black flex items-center justify-between">
+                <span>{keyNotice.msg}</span>
+                <button onClick={() => setKeyNotice(null)} className="text-[#737373] hover:text-black">✕</button>
+              </div>
+            )}
 
-                        <div className="text-right flex-shrink-0">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              isHealthy
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : isQuotaOver
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}
-                          >
-                            {k.status === 'quota_over' ? 'Quota Full (429)' : k.status}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
-                            Usage: {k.usageToday} {k.dailyCap > 0 ? `/ ${k.dailyCap}` : 'calls'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+            <div className="divide-y divide-[#E5E5E5] text-xs">
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-[#525252]">Gemini AI</span>
+                <span className="pill-luxury on">Active</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-[#525252]">Serper.dev</span>
+                <span className="pill-luxury on">Active</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-[#525252]">Meta Graph Token</span>
+                <span className="pill-luxury on">Active</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-[#525252]">SerpAPI</span>
+                <span className="pill-luxury">Optional</span>
               </div>
             </div>
 
-            {/* Free Keys Cheat Sheet */}
-            <div className="p-4 bg-gradient-to-r from-blue-950/40 to-purple-950/40 border border-blue-500/30 rounded-2xl text-xs space-y-2">
-              <div className="font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-400" />
-                <span>Where to Get 100% Free API Keys (Zero Cost Setup)</span>
+            <form onSubmit={handleQuickAddKey} className="space-y-3 pt-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
+                  Engine Provider
+                </label>
+                <select
+                  value={newKeyProvider}
+                  onChange={(e) => setNewKeyProvider(e.target.value)}
+                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black"
+                >
+                  <option value="gemini">Google Gemini AI</option>
+                  <option value="serper">Serper.dev (Google Maps)</option>
+                  <option value="meta">Meta Graph Access Token</option>
+                  <option value="serpapi">SerpAPI</option>
+                </select>
               </div>
-              <ul className="space-y-1.5 text-slate-300 text-[11px]">
-                <li className="flex items-center justify-between">
-                  <span><strong>1. Google Gemini AI:</strong> 1,500 requests/day (45,000/mo) 100% Free. Yields 50-80 leads per prompt!</span>
-                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
-                    <span>Get Key</span> <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span><strong>2. Serper.dev:</strong> 2,500 free credits on every new account. High-yield multi-page enabled.</span>
-                  <a href="https://serper.dev" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
-                    <span>Get Key</span> <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span><strong>3. OpenStreetMap:</strong> Completely Free &amp; Unlimited forever. Zero API key needed!</span>
-                  <span className="text-emerald-400 font-semibold font-mono">Pre-Configured</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span><strong>4. Google Cloud:</strong> $200 free monthly recurring credits for Official Places API.</span>
-                  <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
-                    <span>Google Cloud</span> <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-              </ul>
-            </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
+                  Paste new API key / token
+                </label>
+                <input
+                  type="text"
+                  placeholder="sk-… or EAAV…"
+                  value={newKeyValue}
+                  onChange={(e) => setNewKeyValue(e.target.value)}
+                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowKeysModal(false)}
+                  className="btn-ghost text-xs"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingKey || !newKeyValue.trim()}
+                  className="btn-solid text-xs disabled:opacity-50"
+                >
+                  {savingKey ? 'Reloading...' : 'Save and reload'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

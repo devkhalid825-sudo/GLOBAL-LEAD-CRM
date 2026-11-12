@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
-  ShieldAlert,
   KeyRound,
   X,
-  QrCode,
   Copy,
   CheckCircle2,
-  Lock,
-  ArrowRight,
   MessageCircle,
   Download,
   Smartphone,
@@ -35,7 +31,6 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
   const [verifyCode, setVerifyCode] = useState('');
   const [waNumber, setWaNumber] = useState(localStorage.getItem('crm_2fa_wa') || '');
   const [copiedKey, setCopiedKey] = useState(false);
-  const [copiedBackup, setCopiedBackup] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   // Disable 2FA state
@@ -57,7 +52,6 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
 
   if (!isOpen) return null;
 
-  // Generate 8-digit random backup recovery codes
   const generateBackupCodes = () => {
     const codes: string[] = [];
     for (let i = 0; i < 8; i++) {
@@ -99,22 +93,15 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
         token: verifyCode,
       });
 
-      // Save WhatsApp backup number locally
-      if (waNumber.trim()) {
-        localStorage.setItem('crm_2fa_wa', waNumber.trim());
+      const codes = generateBackupCodes();
+      setBackupCodes(codes);
+      if (waNumber) {
+        localStorage.setItem('crm_2fa_wa', waNumber);
       }
-
-      const generated = generateBackupCodes();
-      setBackupCodes(generated);
-      localStorage.setItem(`crm_backup_codes_${user?.id}`, JSON.stringify(generated));
-
+      setSuccess('Two-Factor Authentication is now ENABLED!');
       setStep('backup');
-      setSuccess('Two-Factor Authentication successfully enabled!');
-      if (user) {
-        user.twoFactorEnabled = true;
-      }
     } catch (err: any) {
-      setError(err?.response?.data?.error || err.message || 'Invalid verification code. Please check your Authenticator app.');
+      setError(err?.response?.data?.error || err.message || 'Invalid 6-digit code. Please verify time sync.');
     } finally {
       setLoading(false);
     }
@@ -122,18 +109,19 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
 
   const handleDisable2FA = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!disablePassword) return;
     setError(null);
     setLoading(true);
 
     try {
-      await api.post('/auth/2fa/disable', { password: disablePassword });
-      setSuccess('2FA has been disabled for your account.');
-      if (user) {
-        user.twoFactorEnabled = false;
-      }
+      await api.post('/auth/2fa/disable', {
+        password: disablePassword,
+      });
+      setSuccess('Two-Factor Authentication has been disabled.');
       setTimeout(() => {
         onClose();
-      }, 1500);
+        window.location.reload();
+      }, 1200);
     } catch (err: any) {
       setError(err?.response?.data?.error || err.message || 'Incorrect password.');
     } finally {
@@ -141,9 +129,11 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
     }
   };
 
-  // WhatsApp Backup Dispatch
   const cleanWaNumber = waNumber.replace(/[^\d]/g, '');
-  const waBackupMessage = `🔐 Global Lead CRM - 2FA Emergency Backup Codes for account (${user?.email}):\n\n${backupCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n⚠️ Keep these codes secure. Each code can be used once as an emergency backup if you lose your authenticator.`;
+  const waBackupMessage = `*GLOBAL LEAD CRM - 2FA Emergency Backup Codes*\nAccount: ${user?.email}\nGenerated: ${new Date().toLocaleDateString()}\n\n${backupCodes
+    .map((c, i) => `${i + 1}. \`${c}\``)
+    .join('\n')}\n\n_Keep these emergency codes safe._`;
+
   const waBackupUrl = cleanWaNumber
     ? `https://wa.me/${cleanWaNumber}?text=${encodeURIComponent(waBackupMessage)}`
     : `https://wa.me/?text=${encodeURIComponent(waBackupMessage)}`;
@@ -160,67 +150,59 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white border border-[#E5E5E5] rounded-[28px] w-full max-w-lg p-6 shadow-2xl relative overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-[#E5E5E5]">
           <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-2xl flex items-center justify-center ${
-              is2FAEnabled
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-            }`}>
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-2xl bg-[#F8F8F8] border border-[#E5E5E5] flex items-center justify-center text-black">
+              <ShieldCheck className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-white">
+              <h3 className="serif text-lg font-bold text-black">
                 Two-Factor Security (2FA)
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#525252]">
                 Google Authenticator &amp; WhatsApp Backup Verification
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition"
+            className="p-1.5 text-[#737373] hover:text-black rounded-lg hover:bg-[#F0F0F0]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mt-4 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <div className="mt-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+          <div className="mt-4 p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl text-black text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-black" />
             <span>{success}</span>
           </div>
         )}
 
         {/* STEP 1: Current Status & Activate Trigger */}
         {step === 'initial' && (
-          <div className="mt-6 space-y-6">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+          <div className="mt-5 space-y-5">
+            <div className="p-4 rounded-2xl bg-[#F8F8F8] border border-[#E5E5E5] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[#525252] uppercase tracking-wider">
                   Status
                 </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono ${
-                  is2FAEnabled
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                }`}>
-                  {is2FAEnabled ? 'ENABLED & PROTECTED' : 'DISABLED'}
+                <span className={`pill-luxury ${is2FAEnabled ? 'on' : ''}`}>
+                  {is2FAEnabled ? 'ACTIVE & PROTECTED' : 'DISABLED'}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Two-factor authentication adds an extra security barrier by requiring a 6-digit temporary passcode from your authenticator app (Google Authenticator, Microsoft Authenticator, or 1Password) along with WhatsApp emergency backup codes.
+              <p className="text-xs text-[#525252] leading-relaxed">
+                Two-factor authentication adds an extra security barrier by requiring a 6-digit temporary passcode from your authenticator app (Google Authenticator, Microsoft Authenticator) along with WhatsApp emergency backup codes.
               </p>
             </div>
 
@@ -228,7 +210,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
               <button
                 onClick={handleStartSetup}
                 disabled={loading}
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/50 disabled:opacity-50"
+                className="btn-solid w-full text-xs py-3 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -236,27 +218,26 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                   <>
                     <KeyRound className="w-4 h-4" />
                     <span>Setup Two-Factor Authentication Now</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
                   </>
                 )}
               </button>
             ) : (
               <div className="space-y-3">
-                <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-2">
-                  <span className="font-semibold text-white block">WhatsApp Backup Sync:</span>
+                <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl text-xs space-y-2">
+                  <span className="font-semibold text-black block">WhatsApp Backup Sync:</span>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       placeholder="e.g. +923001234567"
                       value={waNumber}
                       onChange={(e) => setWaNumber(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                      className="flex-1 bg-white border border-[#E5E5E5] rounded-lg px-3 py-1.5 text-xs text-black"
                     />
                     <a
                       href={waBackupUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition"
+                      className="btn-solid text-xs py-1.5 px-3 flex items-center gap-1.5"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       <span>WhatsApp Backup</span>
@@ -267,13 +248,13 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                 {!showDisableConfirm ? (
                   <button
                     onClick={() => setShowDisableConfirm(true)}
-                    className="w-full py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition"
+                    className="w-full btn-ghost text-xs py-2 text-rose-600 hover:border-rose-400"
                   >
                     Disable Two-Factor Authentication
                   </button>
                 ) : (
-                  <form onSubmit={handleDisable2FA} className="p-4 bg-rose-950/30 border border-rose-500/30 rounded-2xl space-y-3">
-                    <span className="text-xs text-rose-300 font-semibold block">
+                  <form onSubmit={handleDisable2FA} className="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-3">
+                    <span className="text-xs text-rose-700 font-semibold block">
                       Confirm Account Password to Disable 2FA:
                     </span>
                     <input
@@ -282,20 +263,20 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                       placeholder="Your current password"
                       value={disablePassword}
                       onChange={(e) => setDisablePassword(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
+                      className="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs text-black focus:outline-none"
                     />
                     <div className="flex items-center gap-2">
                       <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50"
+                        className="flex-1 py-2 bg-black text-white rounded-xl text-xs font-bold"
                       >
                         {loading ? 'Disabling...' : 'Confirm Disable'}
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowDisableConfirm(false)}
-                        className="px-3 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs"
+                        className="btn-ghost text-xs py-2 px-3"
                       >
                         Cancel
                       </button>
@@ -309,22 +290,21 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
 
         {/* STEP 2: SCAN QR CODE & ENTER 6-DIGIT CODE */}
         {step === 'qr' && (
-          <form onSubmit={handleVerifyAndEnable} className="mt-6 space-y-5">
+          <form onSubmit={handleVerifyAndEnable} className="mt-5 space-y-4">
             <div className="text-center space-y-3">
-              <span className="text-xs text-slate-400 block">
-                Scan this QR code with <strong>Google Authenticator</strong> or <strong>Microsoft Authenticator</strong>:
+              <span className="text-xs text-[#525252] block">
+                Scan this QR code with <strong>Google Authenticator</strong>:
               </span>
 
               {qrCodeDataUrl && (
-                <div className="inline-block p-3 bg-white rounded-2xl shadow-xl">
-                  <img src={qrCodeDataUrl} alt="2FA QR Code" className="w-44 h-44 object-contain" />
+                <div className="inline-block p-3 bg-white border border-[#E5E5E5] rounded-2xl shadow-md">
+                  <img src={qrCodeDataUrl} alt="2FA QR Code" className="w-40 h-40 object-contain mx-auto" />
                 </div>
               )}
 
-              {/* Secret Key Manual Entry */}
               {secret && (
-                <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-2 max-w-sm mx-auto text-xs font-mono">
-                  <span className="text-slate-400 truncate">{secret}</span>
+                <div className="p-2.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl flex items-center justify-between gap-2 max-w-sm mx-auto text-xs mono">
+                  <span className="text-[#525252] truncate">{secret}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -332,34 +312,32 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                       setCopiedKey(true);
                       setTimeout(() => setCopiedKey(false), 2000);
                     }}
-                    className="p-1 text-slate-400 hover:text-white"
+                    className="p-1 text-[#737373] hover:text-black"
                   >
-                    {copiedKey ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedKey ? <CheckCircle2 className="w-4 h-4 text-black" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Optional WhatsApp Backup Number */}
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                WhatsApp Backup Phone (Optional for recovery)
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#525252] mb-1">
+                WhatsApp Backup Phone (Optional)
               </label>
               <div className="relative">
-                <Smartphone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Smartphone className="w-4 h-4 text-[#737373] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="e.g. +92 300 1234567"
                   value={waNumber}
                   onChange={(e) => setWaNumber(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-xl pl-9 pr-3 py-2 text-xs text-black focus:outline-none focus:border-black mono"
                 />
               </div>
             </div>
 
-            {/* 6-Digit Code */}
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#525252] mb-1">
                 Enter 6-Digit Code from Authenticator
               </label>
               <input
@@ -370,7 +348,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                 placeholder="000000"
                 value={verifyCode}
                 onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3 text-center text-lg font-mono tracking-widest text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-xl py-2 px-3 text-center text-lg mono tracking-widest text-black focus:outline-none focus:border-black"
               />
             </div>
 
@@ -378,14 +356,14 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
               <button
                 type="button"
                 onClick={() => setStep('initial')}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                className="btn-ghost text-xs"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={loading || verifyCode.length !== 6}
-                className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50"
+                className="btn-solid flex-1 text-xs py-2.5 disabled:opacity-50"
               >
                 {loading ? 'Verifying...' : 'Verify & Activate 2FA'}
               </button>
@@ -395,20 +373,20 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
 
         {/* STEP 3: EMERGENCY BACKUP CODES + WHATSAPP EXPORT */}
         {step === 'backup' && (
-          <div className="mt-6 space-y-5">
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <div className="mt-5 space-y-4">
+            <div className="p-4 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-black font-bold text-xs">
+                <AlertTriangle className="w-4 h-4 text-black" />
                 <span>Save Your Emergency Recovery Codes</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                If you ever lose access to your phone or Google Authenticator, you can use these one-time codes to sign in. Each code can only be used once.
+              <p className="text-xs text-[#525252] leading-relaxed">
+                If you ever lose access to your phone or Google Authenticator, you can use these one-time codes to sign in.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl font-mono text-xs text-emerald-400 text-center select-all">
+            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl mono text-xs text-black text-center select-all">
               {backupCodes.map((c, i) => (
-                <div key={i} className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                <div key={i} className="p-2 bg-white rounded-lg border border-[#E5E5E5]">
                   {c}
                 </div>
               ))}
@@ -419,16 +397,16 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
                 href={waBackupUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/40"
+                className="btn-solid flex-1 text-xs py-2.5 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>Send Codes to my WhatsApp 💬</span>
+                <span>Send Codes to WhatsApp</span>
               </a>
 
               <button
                 type="button"
                 onClick={handleDownloadBackup}
-                className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
+                className="btn-ghost text-xs py-2.5 flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 <span>Download .txt</span>
@@ -438,7 +416,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose 
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition mt-2"
+              className="w-full btn-ghost text-xs py-2.5 mt-2"
             >
               Done &amp; Finished
             </button>
