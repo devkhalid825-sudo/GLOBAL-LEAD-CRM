@@ -18,6 +18,9 @@ import {
   Zap,
   Radio,
   Search,
+  KeyRound,
+  ShieldCheck,
+  ExternalLink,
 } from 'lucide-react';
 
 interface CountryItem {
@@ -114,7 +117,7 @@ export const LeadFinderPage: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState('PK');
   const [selectedCity, setSelectedCity] = useState('Lahore');
   const [selectedCategory, setSelectedCategory] = useState(FALLBACK_CATEGORIES[0].id);
-  const [selectedSource, setSelectedSource] = useState('auto');
+  const [selectedSource, setSelectedSource] = useState('gemini');
 
   // Custom Category Modal State
   const [showCustomModal, setShowCustomModal] = useState(false);
@@ -122,6 +125,58 @@ export const LeadFinderPage: React.FC = () => {
   const [customCatKeywords, setCustomCatKeywords] = useState('');
   const [savingCustomCat, setSavingCustomCat] = useState(false);
   const [customError, setCustomError] = useState('');
+
+  // Dynamic API Keys & Quota Vault Modal State
+  const [showKeysModal, setShowKeysModal] = useState(false);
+  const [keysList, setKeysList] = useState<any[]>([]);
+  const [loadingKeys, setLoadingKeys] = useState(false);
+  const [newKeyProvider, setNewKeyProvider] = useState('gemini');
+  const [newKeyLabel, setNewKeyLabel] = useState('');
+  const [newKeyValue, setNewKeyValue] = useState('');
+  const [newKeyCap, setNewKeyCap] = useState(0);
+  const [savingKey, setSavingKey] = useState(false);
+  const [keyNotice, setKeyNotice] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const fetchKeysStatus = async () => {
+    setLoadingKeys(true);
+    try {
+      const res = await api.get<any>('/finder/keys-status');
+      setKeysList(res?.data || []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingKeys(false);
+    }
+  };
+
+  const handleQuickAddKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyValue.trim()) {
+      setKeyNotice({ msg: 'Please paste your API key.', type: 'error' });
+      return;
+    }
+    setSavingKey(true);
+    setKeyNotice(null);
+    try {
+      const res = await api.post<any>('/finder/quick-add-key', {
+        providerId: newKeyProvider,
+        label: newKeyLabel.trim() || undefined,
+        apiKey: newKeyValue.trim(),
+        dailyCap: newKeyCap || 0,
+      });
+      setKeyNotice({
+        msg: res?.message || 'Key verified and hot-reloaded into memory pool successfully!',
+        type: 'success',
+      });
+      setNewKeyValue('');
+      setNewKeyLabel('');
+      fetchKeysStatus();
+    } catch (err: any) {
+      setKeyNotice({ msg: err.message || 'Key verification failed', type: 'error' });
+    } finally {
+      setSavingKey(false);
+    }
+  };
 
   // Estimate
   const [estimate, setEstimate] = useState<any | null>(null);
@@ -309,15 +364,26 @@ export const LeadFinderPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Feature Pills */}
+        {/* Feature Pills & Key Vault Button */}
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              fetchKeysStatus();
+              setShowKeysModal(true);
+            }}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600/30 to-blue-600/30 hover:from-purple-600/40 hover:to-blue-600/40 text-purple-300 border border-purple-500/40 flex items-center gap-1.5 transition shadow"
+            title="Manage, hot-swap & inspect live API keys without rebooting server"
+          >
+            <KeyRound className="w-4 h-4 text-purple-400" />
+            <span>⚡ API Keys &amp; Quota Vault</span>
+          </button>
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400" />
-            Meta Pixel &amp; Ads Detection Active
+            Meta &amp; Google Ads Intel
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            Multi-Engine Failover
+            Auto Multi-Key Hot-Swap
           </span>
         </div>
       </div>
@@ -422,19 +488,19 @@ export const LeadFinderPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                Scraping Engine
+                Scraping Engine &amp; Density
               </label>
               <select
                 value={selectedSource}
                 onChange={(e) => setSelectedSource(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
               >
-                <option value="auto">Auto (Google Places ➔ Serper ➔ SerpAPI ➔ Apify ➔ Overpass)</option>
-                <option value="google_places">Google Places API Only</option>
-                <option value="serper">Serper.dev (Google Maps Fast) Only</option>
-                <option value="serpapi">SerpAPI (Google Maps) Only</option>
-                <option value="apify">Apify Scraper Only</option>
-                <option value="overpass">OpenStreetMap (Overpass - Free) Only</option>
+                <option value="gemini">🚀 Google Gemini AI Ultra Extractor (50 to 100 Leads/Call - FREE Key)</option>
+                <option value="serper">⚡ Serper.dev Google Maps (Turbo 40-60 Leads/Cell)</option>
+                <option value="overpass">🌍 OpenStreetMap (100% Free &amp; Unlimited, No Key Required)</option>
+                <option value="auto">🔄 Smart Auto-Failover (Serper ➔ Gemini ➔ Overpass ➔ Google Maps)</option>
+                <option value="google_places">🗺️ Official Google Places API ($200/mo Free Credit)</option>
+                <option value="serpapi">🔍 SerpAPI Scraper</option>
               </select>
             </div>
           </div>
@@ -630,17 +696,30 @@ export const LeadFinderPage: React.FC = () => {
                   }`}
                 >
                   {isPaused && (
-                    <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-xs flex items-center justify-between">
+                    <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                        <span>{job.pausedReason || 'All keys failed. Job paused at checkpoint.'}</span>
+                        <span>{job.pausedReason || 'All keys failed or quota reached. Job paused at checkpoint.'}</span>
                       </div>
-                      <NavLink
-                        to="/console/integrations"
-                        className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-[11px] ml-2 flex-shrink-0"
-                      >
-                        Add Keys in Console
-                      </NavLink>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            fetchKeysStatus();
+                            setShowKeysModal(true);
+                          }}
+                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span>⚡ Hot-Swap / Add Key</span>
+                        </button>
+                        <button
+                          onClick={() => handleResumeJob(job.id)}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>Resume Search</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -720,6 +799,254 @@ export const LeadFinderPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Dynamic API Keys & Multi-Engine Quota Vault Modal */}
+      {showKeysModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl w-full max-w-3xl p-6 shadow-2xl space-y-6 my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-purple-500/20 text-purple-400 rounded-xl">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Dynamic API Key Vault &amp; Engine Hot-Reload
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Keys hot-swap immediately in memory. Zero backend restarts required!
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowKeysModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {keyNotice && (
+              <div
+                className={`p-3.5 rounded-xl text-xs flex items-center justify-between border ${
+                  keyNotice.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                }`}
+              >
+                <span>{keyNotice.msg}</span>
+                <button onClick={() => setKeyNotice(null)} className="px-2 text-slate-400 hover:text-white">✕</button>
+              </div>
+            )}
+
+            {/* Quick Add / Replace Form */}
+            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                <span>+ Add / Hot-Swap API Key (No Restart Required)</span>
+              </h4>
+
+              <form onSubmit={handleQuickAddKey} className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+                      Engine Provider
+                    </label>
+                    <select
+                      value={newKeyProvider}
+                      onChange={(e) => setNewKeyProvider(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="gemini">Google Gemini AI (100% Free)</option>
+                      <option value="serper">Serper.dev (Google Maps Fast)</option>
+                      <option value="google_places">Official Google Places API</option>
+                      <option value="serpapi">SerpAPI (Google Maps)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+                      Key Label / Account Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Gemini Account #2"
+                      value={newKeyLabel}
+                      onChange={(e) => setNewKeyLabel(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+                      Daily Usage Cap (0 = Unlimited)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={newKeyCap}
+                      onChange={(e) => setNewKeyCap(parseInt(e.target.value, 10) || 0)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase text-slate-400 mb-1">
+                    Paste API Secret Key *
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      required
+                      placeholder="Paste your API key here (e.g. AIzaSy... or b67f...)"
+                      value={newKeyValue}
+                      onChange={(e) => setNewKeyValue(e.target.value)}
+                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono focus:outline-none focus:border-purple-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={savingKey}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      {savingKey ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Verify &amp; Activate</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Currently Configured Keys Status */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Live Engine Key Pool &amp; Quota Health
+                </h4>
+                <button
+                  onClick={fetchKeysStatus}
+                  className="text-slate-400 hover:text-white text-xs flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-3 h-3 ${loadingKeys ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {/* Built-in OpenStreetMap Engine Status */}
+                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <div>
+                      <span className="font-bold text-white">OpenStreetMap / Overpass Turbo</span>
+                      <span className="text-[11px] text-emerald-400 block font-mono">100% Free &amp; Keyless Engine Built-in</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Unlimited &amp; Active
+                    </span>
+                    <span className="text-[11px] text-slate-500 block mt-0.5">$0.00 Cost</span>
+                  </div>
+                </div>
+
+                {keysList.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-slate-500">
+                    No custom keys added yet. Add a free Gemini or Serper key above!
+                  </div>
+                ) : (
+                  keysList.map((k) => {
+                    const isHealthy = k.status === 'healthy';
+                    const isQuotaOver = k.status === 'quota_over';
+
+                    return (
+                      <div
+                        key={k.id}
+                        className={`bg-slate-950/80 border rounded-xl p-3 flex items-center justify-between text-xs ${
+                          isHealthy
+                            ? 'border-slate-800'
+                            : isQuotaOver
+                            ? 'border-rose-500/40 bg-rose-950/10'
+                            : 'border-amber-500/30'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`w-2.5 h-2.5 rounded-full ${
+                              isHealthy ? 'bg-emerald-400' : isQuotaOver ? 'bg-rose-400' : 'bg-amber-400'
+                            }`}
+                          />
+                          <div className="min-w-0">
+                            <span className="font-bold text-white truncate block">{k.label}</span>
+                            <span className="text-[11px] text-slate-400 font-mono capitalize">
+                              Engine: {k.providerId} • Priority: {k.priority}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex-shrink-0">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              isHealthy
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : isQuotaOver
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}
+                          >
+                            {k.status === 'quota_over' ? 'Quota Full (429)' : k.status}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
+                            Usage: {k.usageToday} {k.dailyCap > 0 ? `/ ${k.dailyCap}` : 'calls'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Free Keys Cheat Sheet */}
+            <div className="p-4 bg-gradient-to-r from-blue-950/40 to-purple-950/40 border border-blue-500/30 rounded-2xl text-xs space-y-2">
+              <div className="font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <span>Where to Get 100% Free API Keys (Zero Cost Setup)</span>
+              </div>
+              <ul className="space-y-1.5 text-slate-300 text-[11px]">
+                <li className="flex items-center justify-between">
+                  <span><strong>1. Google Gemini AI:</strong> 1,500 requests/day (45,000/mo) 100% Free. Yields 50-80 leads per prompt!</span>
+                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
+                    <span>Get Key</span> <ExternalLink className="w-3 h-3" />
+                  </a>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span><strong>2. Serper.dev:</strong> 2,500 free credits on every new account. High-yield multi-page enabled.</span>
+                  <a href="https://serper.dev" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
+                    <span>Get Key</span> <ExternalLink className="w-3 h-3" />
+                  </a>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span><strong>3. OpenStreetMap:</strong> Completely Free &amp; Unlimited forever. Zero API key needed!</span>
+                  <span className="text-emerald-400 font-semibold font-mono">Pre-Configured</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span><strong>4. Google Cloud:</strong> $200 free monthly recurring credits for Official Places API.</span>
+                  <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1 font-semibold">
+                    <span>Google Cloud</span> <ExternalLink className="w-3 h-3" />
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
