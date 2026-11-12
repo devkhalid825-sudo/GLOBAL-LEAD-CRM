@@ -42,8 +42,8 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
 
   const tags = Array.isArray(lead.tags) ? lead.tags : [];
   const ads = lead.adsInfo || {};
-  const isMetaIntegrated = tags.includes('Meta Integrated') || tags.includes('Meta Pixel Active') || ads.pixelDetected;
-  const isAdsRunning = tags.includes('Meta Ads Active') || ads.running;
+  const isMetaIntegrated = tags.includes('Meta Integrated') || tags.includes('Meta Pixel Active') || ads.pixelDetected || ads.hasMetaPixel;
+  const isAdsRunning = tags.includes('Meta Ads Active') || ads.running || ads.runningMetaAds || ads.runningGoogleAds;
   const pixelId = (ads.pixelIds && ads.pixelIds[0]) || '9482019482019';
 
   const category = lead.categoryName || 'Business & Digital Services';
@@ -69,7 +69,9 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
     ? `🏡 Discover high-yield luxury real estate in prime locations. Low down-payments, flexible payment plans, and guaranteed capital appreciation. Book a VIP tour today.`
     : `⚡ Serving customers in ${lead.city || 'your area'}. Experience top-rated service with transparent pricing and dedicated support. Tap below to speak with an expert!`;
 
-  const pitchScript = `Hi ${cleanName}, noticed your active campaigns on Meta & Instagram in ${lead.city}! Your brand positioning is solid, but noticed your landing page conversion tracking could be optimized to cut your Cost Per Acquisition (CPA) by 30%. Would you be open to a quick 2-minute video breakdown of 2 fixes?`;
+  const pitchScript = isAdsRunning
+    ? `Hi ${cleanName}, noticed your active campaigns on Meta & Instagram in ${lead.city || 'your area'}! Your brand positioning is solid, but noticed your landing page conversion tracking could be optimized to cut your Cost Per Acquisition (CPA) by 30%. Would you be open to a quick 2-minute video breakdown of 2 fixes?`
+    : `Hi ${cleanName}, noticed your business in ${lead.city || 'your area'} has strong market positioning, but you aren't currently running Meta/Instagram ads to capture local high-intent customers. We designed a sample high-converting ad concept tailored for ${category} that could drive 30-50 qualified inquiries/month. Open to a quick 2-minute preview?`;
 
   const adLibraryUrl =
     ads.adLibraryUrl ||
@@ -167,6 +169,43 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
           </div>
         </div>
 
+        {/* Dynamic Ad Status Banner */}
+        {isAdsRunning ? (
+          <div className="px-6 py-2.5 bg-emerald-500/10 border-b border-emerald-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-emerald-300">
+              <Zap className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+              <span><strong>Active Campaigns Detected:</strong> Is business ke active Meta/Google tags detect huay hain.</span>
+            </div>
+            <a
+              href={adLibraryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[11px] transition shadow"
+            >
+              <span>View Real Ads on Facebook Ad Library ↗</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ) : (
+          <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-amber-300">
+              <ShieldAlert className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <span>
+                <strong>No Active Ads Detected (Pixel Missing):</strong> Yeh business Meta/Google par ads nahi chala raha. Neeche inke liye sample Pitch Mockup & Cold Pitch tayyar hai!
+              </span>
+            </div>
+            <a
+              href={adLibraryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 rounded-lg font-bold text-[11px] transition"
+            >
+              <span>Check Meta Ad Library</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
+
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* TAB 1: INSTAGRAM FEED AD MOCKUP */}
@@ -208,10 +247,17 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                       {adBody}
                     </p>
                   </div>
-                  <div className="text-[11px] font-mono text-emerald-400 font-bold z-10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>Active Meta Sponsored Creative</span>
-                  </div>
+                  {isAdsRunning ? (
+                    <div className="text-[11px] font-mono text-emerald-400 font-bold z-10 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span>Active Meta Sponsored Creative</span>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] font-mono text-amber-300 font-bold z-10 flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-amber-500/30">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>Agency Pitch Mockup (No Live Ads)</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* IG Action Bar */}
@@ -230,14 +276,26 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                     </div>
                     <Bookmark className="w-5 h-5 text-zinc-300" />
                   </div>
-                  <div className="text-xs font-bold">1,842 likes</div>
+                  <div className="text-xs font-bold">{isAdsRunning ? '1,842 likes' : 'Projected 500+ Engagement'}</div>
                   <div className="text-xs text-zinc-200 leading-snug">
                     <span className="font-bold mr-1.5 text-white">{handleName}</span>
                     <span>{adBody}</span>
                   </div>
                   <div className="text-[10px] text-zinc-500 uppercase tracking-wider pt-1">
-                    Verified Meta Advertiser • 3 days ago
+                    {isAdsRunning ? 'Verified Meta Advertiser • 3 days ago' : 'Cold Outreach Specimen • Ready to Pitch'}
                   </div>
+                </div>
+
+                <div className="p-3 bg-zinc-950/90 border-t border-zinc-800 text-center">
+                  <a
+                    href={adLibraryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                  >
+                    <span>Double-check {cleanName} on Meta Ad Library</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
 
@@ -251,7 +309,9 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between text-slate-400 py-1 border-b border-slate-900">
                       <span>Ad Placement:</span>
-                      <span className="text-white font-semibold">Instagram Feed &amp; Reels</span>
+                      <span className="text-white font-semibold">
+                        {isAdsRunning ? 'Instagram Feed & Reels (Active)' : 'Proposed: Feed & Reels'}
+                      </span>
                     </div>
                     <div className="flex justify-between text-slate-400 py-1 border-b border-slate-900">
                       <span>Meta Pixel Tracking:</span>
@@ -261,7 +321,9 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                     </div>
                     <div className="flex justify-between text-slate-400 py-1 border-b border-slate-900">
                       <span>Estimated Ad Budget:</span>
-                      <span className="text-amber-400 font-mono font-bold">$1,200 - $3,800 / month</span>
+                      <span className={isAdsRunning ? 'text-amber-400 font-mono font-bold' : 'text-slate-400 font-mono font-semibold'}>
+                        {isAdsRunning ? '$1,200 - $3,800 / month' : '$0 / month (Untapped Opportunity!)'}
+                      </span>
                     </div>
                     <div className="flex justify-between text-slate-400 py-1">
                       <span>Target Audience:</span>
