@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar.js';
 import { Topbar } from './Topbar.js';
+import { api } from '../../api/client.js';
 
 export const AppShell: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Active time & heartbeat tracker: records active session minutes while CRM window is open
+  useEffect(() => {
+    const sendBeat = () => {
+      if (!document.hidden) {
+        api.post('/reports/heartbeat', {}).catch(() => {});
+      }
+    };
+
+    // Initial beat
+    sendBeat();
+    const interval = setInterval(sendBeat, 60000); // every 60s
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">

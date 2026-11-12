@@ -77,6 +77,64 @@ export const LeadDetailPage: React.FC = () => {
   const [meetingNotice, setMeetingNotice] = useState<string | null>(null);
   const [copiedMeetLink, setCopiedMeetLink] = useState(false);
 
+  // Speech-to-Text (Voice Typing) state
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = React.useRef<any>(null);
+
+  const toggleSpeechRecognition = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Speech Recognition is not supported by your browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript) {
+          setNewNote((prev) => (prev ? `${prev} ${transcript.trim()}` : transcript.trim()));
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to start speech recognition:', err);
+      setIsListening(false);
+    }
+  };
+
   const openScheduleMeetingModal = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyz';
     const pick = (len: number) =>
@@ -303,6 +361,12 @@ export const LeadDetailPage: React.FC = () => {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                api.post(`/leads/${id}/timeline`, {
+                  type: 'whatsapp',
+                  payload: { message: `Initiated WhatsApp outreach with ${phone}` },
+                }).catch(() => {});
+              }}
               className="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
             >
               <MessageCircle className="w-4 h-4" />
@@ -728,12 +792,30 @@ export const LeadDetailPage: React.FC = () => {
           <div className="space-y-3">
             <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
               <form onSubmit={handleAddNote} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Internal Note / Strategy
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleSpeechRecognition}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                      isListening
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                        : 'bg-purple-500/10 text-purple-300 border border-purple-500/20 hover:bg-purple-500/20'
+                    }`}
+                    title="Click and speak to dictate your note into the text area"
+                  >
+                    <Mic className={`w-3.5 h-3.5 ${isListening ? 'text-rose-400' : 'text-purple-400'}`} />
+                    <span>{isListening ? '🎙️ Listening (Speak Now)...' : '🗣️ Voice Typing (Dictate Note)'}</span>
+                  </button>
+                </div>
                 <textarea
                   rows={3}
                   required
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Leave an internal note, pitch reminder, or mention team members with @name..."
+                  placeholder="Leave an internal note, pitch reminder, or click 'Voice Typing' to speak directly..."
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                 />
                 <div className="flex justify-between items-center">
