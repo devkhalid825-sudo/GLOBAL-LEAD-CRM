@@ -23,8 +23,17 @@ import {
   Trash2,
   BarChart3,
   Activity,
-  X,
 } from 'lucide-react';
+import {
+  Card,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Pill,
+  Modal,
+  Skeleton,
+} from '../components/ui/index.js';
 
 interface AgentStat {
   userId: string;
@@ -246,107 +255,117 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Editorial Luxury Header matching Figma */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#E5E5E5]">
+      {/* Editorial Luxury Header matching visual reference */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-border">
         <div>
-          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-black leading-tight">
-            Good morning, {user?.name || 'Ayesha'}.
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-tx leading-tight">
+            Good morning, {user?.name || 'Administrator'}.
           </h1>
-          <p className="text-sm text-[#525252] mt-2 font-sans">
-            Your pipeline moved <span className="mono text-black font-semibold">$48,200</span> this week across Meta, Google Ads &amp; WhatsApp outreach.
+          <p className="text-sm text-tx-muted mt-2 font-sans">
+            Your pipeline moved <span className="font-mono text-tx font-semibold">$48,200</span> this week across Meta, Google Ads &amp; WhatsApp outreach.
           </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <NavLink
-            to="/finder"
-            className="btn-solid flex items-center gap-2 text-xs"
-          >
-            <Compass className="w-4 h-4" />
-            <span>Find New Leads</span>
+          <NavLink to="/finder">
+            <Button variant="primary" size="sm">
+              <Compass className="w-4 h-4 mr-1.5" />
+              <span>Find new leads</span>
+            </Button>
           </NavLink>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowTaskModal(true)}
-            className="btn-ghost flex items-center gap-2 text-xs"
           >
-            <Plus className="w-4 h-4" />
-            <span>Assign Task</span>
-          </button>
+            <Plus className="w-4 h-4 mr-1.5" />
+            <span>Assign task</span>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleQuickSeed}
-            disabled={seeding}
-            className="btn-ghost flex items-center gap-2 text-xs text-[#737373] hover:text-black"
+            loading={seeding}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#737373]" />
-            <span>{seeding ? 'Seeding...' : 'Seed Data'}</span>
-          </button>
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <span>Seed data</span>
+          </Button>
         </div>
       </div>
 
       {seedNotice && (
-        <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl text-black text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-black" />
+        <Card className="p-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-tx">
+            <CheckCircle2 className="w-4 h-4 text-tx" />
             <span>{seedNotice}</span>
           </div>
-          <button onClick={() => setSeedNotice(null)} className="text-[#737373] hover:text-black">✕</button>
-        </div>
+          <button
+            onClick={() => setSeedNotice(null)}
+            className="text-tx-subtle hover:text-tx text-xs font-mono"
+          >
+            ✕
+          </button>
+        </Card>
       )}
 
-      {/* 4 Stat KPI Cards matching Figma */}
+      {/* 4 Stat KPI Cards matching luxury reference */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Leads */}
-        <div className="card-luxury p-6 space-y-2">
-          <span className="text-xs text-[#525252] block font-medium">Total leads scraped</span>
-          <span className="text-3xl font-bold text-black mono block">{loading ? '...' : totalLeads.toLocaleString()}</span>
-        </div>
+        <Card className="p-6 space-y-2">
+          <span className="text-xs text-tx-muted block font-medium">Total leads scraped</span>
+          <span className="text-3xl font-bold text-tx font-mono block">
+            {loading ? '...' : totalLeads.toLocaleString()}
+          </span>
+        </Card>
 
         {/* Active Meta Pixel brands */}
-        <div className="card-luxury p-6 space-y-2">
-          <span className="text-xs text-[#525252] block font-medium">Active Meta Pixel brands</span>
-          <span className="text-3xl font-bold text-black mono block">{loading ? '...' : (metaLeadsCount || 21).toLocaleString()}</span>
-        </div>
+        <Card className="p-6 space-y-2">
+          <span className="text-xs text-tx-muted block font-medium">Active Meta Pixel brands</span>
+          <span className="text-3xl font-bold text-tx font-mono block">
+            {loading ? '...' : (metaLeadsCount || 21).toLocaleString()}
+          </span>
+        </Card>
 
         {/* WhatsApp Outreach Sent */}
-        <div className="card-luxury p-6 space-y-2">
-          <span className="text-xs text-[#525252] block font-medium">WhatsApp outreach sent</span>
-          <span className="text-3xl font-bold text-black mono block">
+        <Card className="p-6 space-y-2">
+          <span className="text-xs text-tx-muted block font-medium">WhatsApp outreach sent</span>
+          <span className="text-3xl font-bold text-tx font-mono block">
             {teamStats.reduce((acc: number, r: any) => acc + (r.whatsappCount || 0), 0) || 1129}
           </span>
-        </div>
+        </Card>
 
         {/* Pipeline Value */}
-        <div className="card-luxury p-6 space-y-2">
-          <span className="text-xs text-[#525252] block font-medium">Pipeline value</span>
-          <span className="text-3xl font-bold text-black mono block">$482,500</span>
-        </div>
+        <Card className="p-6 space-y-2">
+          <span className="text-xs text-tx-muted block font-medium">Pipeline value</span>
+          <span className="text-3xl font-bold text-tx font-mono block">$482,500</span>
+        </Card>
       </div>
 
-      {/* Two-Column Grid: Team Productivity (c7) & Task Delegation (c5) matching Figma HTML */}
+      {/* Two-Column Grid: Team Productivity (c7) & Task Delegation (c5) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Team Productivity Table (span 7) */}
-        <div className="lg:col-span-7 card-luxury p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
+        <Card className="lg:col-span-7 p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h2 className="serif text-xl font-semibold text-black flex items-center gap-2">
-                <Activity className="w-5 h-5 text-black" />
+              <h2 className="font-serif text-xl font-semibold text-tx flex items-center gap-2">
+                <Activity className="w-5 h-5 text-tx" />
                 <span>Team productivity</span>
               </h2>
-              <p className="text-xs text-[#525252] mt-0.5">
+              <p className="text-xs text-tx-muted mt-0.5">
                 Active hours, WhatsApp outreach, scraped leads &amp; deals closed.
               </p>
             </div>
-            <span className="pill-luxury on text-[11px]">
+            <Pill active className="text-[11px]">
               {teamStats.filter((t) => t.isOnline).length || 2} Online
-            </span>
+            </Pill>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-black border-collapse">
+            <table className="w-full text-left text-xs text-tx border-collapse">
               <thead>
-                <tr className="border-b border-[#E5E5E5] text-[#737373] text-[11px]">
+                <tr className="border-b border-border text-tx-subtle text-[11px]">
                   <th className="py-2.5 px-3 font-medium">Agent</th>
                   <th className="py-2.5 px-3 font-medium">CRM hours</th>
                   <th className="py-2.5 px-3 font-medium">WhatsApp</th>
@@ -354,18 +373,18 @@ export const DashboardPage: React.FC = () => {
                   <th className="py-2.5 px-3 font-medium text-right">Closed</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E5E5]">
+              <tbody className="divide-y divide-border">
                 {teamStats.length > 0 ? (
                   teamStats.map((agent) => (
-                    <tr key={agent.userId} className="hover:bg-[#F0F0F0] transition">
+                    <tr key={agent.userId} className="hover:bg-row-hover transition">
                       <td className="py-3 px-3">
-                        <div className="serif font-semibold text-black">{agent.name}</div>
-                        <div className="text-[11px] text-[#737373]">{agent.role}</div>
+                        <div className="font-serif font-semibold text-tx">{agent.name}</div>
+                        <div className="text-[11px] text-tx-subtle">{agent.role}</div>
                       </td>
-                      <td className="py-3 px-3 mono text-black">{formatMins(agent.activeMinutesToday)}</td>
-                      <td className="py-3 px-3 mono text-black">{agent.whatsappCount || 0}</td>
-                      <td className="py-3 px-3 mono text-black">{agent.leadsScraped || 0}</td>
-                      <td className="py-3 px-3 mono text-black text-right font-bold">{agent.wonCount || 0}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{formatMins(agent.activeMinutesToday)}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{agent.whatsappCount || 0}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{agent.leadsScraped || 0}</td>
+                      <td className="py-3 px-3 font-mono text-tx text-right font-bold">{agent.wonCount || 0}</td>
                     </tr>
                   ))
                 ) : (
@@ -375,25 +394,25 @@ export const DashboardPage: React.FC = () => {
                     ['Sara Ahmed', '7h 05m', 301, 990, 6],
                     ['Bilal Raza', '4h 22m', 96, 1730, 2],
                   ].map((r, i) => (
-                    <tr key={i} className="hover:bg-[#F0F0F0] transition">
-                      <td className="py-3 px-3 serif font-semibold text-black">{r[0]}</td>
-                      <td className="py-3 px-3 mono text-black">{r[1]}</td>
-                      <td className="py-3 px-3 mono text-black">{r[2]}</td>
-                      <td className="py-3 px-3 mono text-black">{r[3]}</td>
-                      <td className="py-3 px-3 mono text-black text-right font-bold">{r[4]}</td>
+                    <tr key={i} className="hover:bg-row-hover transition">
+                      <td className="py-3 px-3 font-serif font-semibold text-tx">{r[0]}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{r[1]}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{r[2]}</td>
+                      <td className="py-3 px-3 font-mono text-tx">{r[3]}</td>
+                      <td className="py-3 px-3 font-mono text-tx text-right font-bold">{r[4]}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
 
         {/* Task Delegation Board (span 5) */}
-        <div className="lg:col-span-5 card-luxury p-6 flex flex-col justify-between space-y-4">
+        <Card className="lg:col-span-5 p-6 flex flex-col justify-between space-y-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
-              <h2 className="serif text-xl font-semibold text-black">Task delegation</h2>
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="font-serif text-xl font-semibold text-tx">Task delegation</h2>
               <div className="flex gap-1">
                 {(['all', 'mine', 'pending'] as const).map((tab) => (
                   <button
@@ -407,7 +426,7 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="divide-y divide-[#E5E5E5] max-h-[380px] overflow-y-auto">
+            <div className="divide-y divide-border max-h-[380px] overflow-y-auto">
               {filteredTasks.length > 0 ? (
                 filteredTasks.map((t) => {
                   const isDone = t.status === 'completed';
@@ -416,25 +435,25 @@ export const DashboardPage: React.FC = () => {
                       <div className="flex items-center gap-3 min-w-0">
                         <button
                           onClick={() => handleToggleTaskStatus(t.id, t.status)}
-                          className="text-[#737373] hover:text-black transition"
+                          className="text-tx-subtle hover:text-tx transition"
                         >
-                          {isDone ? <CheckSquare className="w-4 h-4 text-black" /> : <Square className="w-4 h-4" />}
+                          {isDone ? <CheckSquare className="w-4 h-4 text-tx" /> : <Square className="w-4 h-4" />}
                         </button>
                         <div className="min-w-0">
-                          <div className={`text-xs font-medium text-black truncate ${isDone ? 'line-through text-[#737373]' : ''}`}>
+                          <div className={`text-xs font-medium text-tx truncate ${isDone ? 'line-through text-tx-muted' : ''}`}>
                             {t.title}
                           </div>
-                          <div className="text-[11px] text-[#737373] flex items-center gap-1.5 mt-0.5">
+                          <div className="text-[11px] text-tx-muted flex items-center gap-1.5 mt-0.5">
                             <span>{t.assigneeName}</span>
                             <span>•</span>
-                            <span className="pill-luxury text-[10px] py-0 px-1.5">{t.priority}</span>
+                            <Pill className="text-[10px] py-0 px-1.5" active={t.priority === 'urgent'}>{t.priority}</Pill>
                           </div>
                         </div>
                       </div>
 
                       <button
                         onClick={() => handleDeleteTask(t.id)}
-                        className="text-[#737373] hover:text-rose-600 p-1"
+                        className="text-tx-subtle hover:text-tx p-1 transition"
                         title="Delete task"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -450,13 +469,13 @@ export const DashboardPage: React.FC = () => {
                 ].map((task, i) => (
                   <div key={i} className="py-2.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Square className="w-4 h-4 text-[#737373]" />
+                      <Square className="w-4 h-4 text-tx-subtle" />
                       <div>
-                        <div className="text-xs font-medium text-black">{task[0]}</div>
-                        <div className="text-[11px] text-[#737373] flex items-center gap-1.5 mt-0.5">
+                        <div className="text-xs font-medium text-tx">{task[0]}</div>
+                        <div className="text-[11px] text-tx-muted flex items-center gap-1.5 mt-0.5">
                           <span>Due {task[2]} · {task[1]}</span>
                           <span>•</span>
-                          <span className="pill-luxury text-[10px] py-0 px-1.5">{task[3]}</span>
+                          <Pill className="text-[10px] py-0 px-1.5">{task[3]}</Pill>
                         </div>
                       </div>
                     </div>
@@ -466,61 +485,70 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center mt-2"
             onClick={() => setShowTaskModal(true)}
-            className="btn-ghost w-full text-xs flex items-center justify-center gap-2 mt-2"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-1.5" />
             <span>Assign task</span>
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
 
       {/* Google Ads Campaign & Offline Conversion Performance Hub */}
       {googleAds && (
-        <div className="card-luxury p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E5E5E5]">
+        <Card className="p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-black text-white rounded-xl">
+              <div className="p-2.5 bg-surface-2 border border-border text-tx rounded-xl">
                 <BarChart3 className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="serif text-base font-bold text-black">Google Ads Campaign Intelligence</h3>
-                  <span className="pill-luxury on text-[10px]">Connected</span>
+                  <h3 className="font-serif text-base font-bold text-tx">Google Ads Campaign Intelligence</h3>
+                  <Pill active className="text-[10px]">Connected</Pill>
                 </div>
-                <p className="text-xs text-[#525252] mono mt-0.5">
+                <p className="text-xs text-tx-muted font-mono mt-0.5">
                   Customer ID: {googleAds.customerId} • {googleAds.accountName}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="sm"
+                loading={syncingGoogleAds}
                 onClick={handleSyncOfflineConversions}
-                disabled={syncingGoogleAds}
-                className="btn-solid text-xs flex items-center gap-1.5"
               >
-                <Zap className="w-3.5 h-3.5" />
-                <span>{syncingGoogleAds ? 'Syncing...' : 'Sync Offline Conversions'}</span>
-              </button>
+                <Zap className="w-3.5 h-3.5 mr-1.5" />
+                <span>Sync Offline Conversions</span>
+              </Button>
               <a
                 href="https://adstransparency.google.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-ghost text-xs flex items-center gap-1"
               >
-                <span>Transparency</span>
-                <ExternalLink className="w-3 h-3" />
+                <Button variant="ghost" size="sm">
+                  <span>Transparency</span>
+                  <ExternalLink className="w-3 h-3 ml-1.5" />
+                </Button>
               </a>
             </div>
           </div>
 
           {adsNotice && (
-            <div className="p-3 bg-white border border-[#E5E5E5] rounded-xl text-black text-xs flex items-center justify-between">
+            <Card className="p-3 text-xs text-tx flex items-center justify-between">
               <span>{adsNotice}</span>
-              <button onClick={() => setAdsNotice(null)} className="text-[#737373] hover:text-black px-2">✕</button>
-            </div>
+              <button
+                onClick={() => setAdsNotice(null)}
+                className="text-tx-subtle hover:text-tx px-2 font-mono"
+              >
+                ✕
+              </button>
+            </Card>
           )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -532,32 +560,32 @@ export const DashboardPage: React.FC = () => {
               { label: 'CRM Conversions', val: `${googleAds.conversionsTracked} leads` },
               { label: 'Cost / Acquisition', val: `$${googleAds.costPerAcquisition}` },
             ].map((metric, i) => (
-              <div key={i} className="bg-white border border-[#E5E5E5] rounded-xl p-3 shadow-sm">
-                <span className="text-[11px] text-[#737373] block uppercase font-medium">{metric.label}</span>
-                <span className="text-lg font-bold text-black mono mt-1 block">{metric.val}</span>
+              <div key={i} className="bg-surface-2 border border-border rounded-xl p-3">
+                <span className="text-[11px] text-tx-subtle block uppercase font-medium">{metric.label}</span>
+                <span className="text-lg font-bold text-tx font-mono mt-1 block">{metric.val}</span>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Main Grid: Recent Leads & Upcoming Calls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols): Recent Leads with Meta Intel */}
-        <div className="lg:col-span-2 card-luxury p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
+        <Card className="lg:col-span-2 p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h2 className="serif text-base font-bold text-black flex items-center gap-2">
-                <Users className="w-4 h-4 text-black" />
+              <h2 className="font-serif text-base font-bold text-tx flex items-center gap-2">
+                <Users className="w-4 h-4 text-tx" />
                 <span>Recent High-Intent Leads</span>
               </h2>
-              <p className="text-xs text-[#525252] mt-0.5">
+              <p className="text-xs text-tx-muted mt-0.5">
                 Verified businesses with Meta tracking, direct WhatsApp &amp; website analysis
               </p>
             </div>
             <NavLink
               to="/leads"
-              className="text-xs text-black hover:opacity-70 font-semibold flex items-center gap-1"
+              className="text-xs text-tx hover:opacity-70 font-semibold flex items-center gap-1 transition"
             >
               <span>View All ({totalLeads})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -565,17 +593,14 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {recentLeads.length === 0 ? (
-            <div className="py-12 text-center text-[#737373] text-xs space-y-3">
+            <div className="py-12 text-center text-tx-muted text-xs space-y-3">
               <p>No leads extracted yet.</p>
-              <button
-                onClick={handleQuickSeed}
-                className="btn-solid text-xs"
-              >
+              <Button variant="primary" size="sm" onClick={handleQuickSeed}>
                 Seed Test Leads Now
-              </button>
+              </Button>
             </div>
           ) : (
-            <div className="divide-y divide-[#E5E5E5]">
+            <div className="divide-y divide-border">
               {recentLeads.map((lead) => {
                 const phone = lead.phoneNorm || (lead.phones && lead.phones[0]);
                 const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;
@@ -599,20 +624,18 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={lead.id}
-                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#F0F0F0] px-2 rounded-xl transition"
+                    className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-row-hover px-2 rounded-xl transition"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="serif font-semibold text-black text-sm truncate">{lead.name}</span>
-                        <span className="pill-luxury text-[10px]">
-                          {lead.status}
-                        </span>
+                        <span className="font-serif font-semibold text-tx text-sm truncate">{lead.name}</span>
+                        <Pill className="text-[10px]">{lead.status}</Pill>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#525252]">
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-tx-muted">
                         <span>📍 {lead.city}, {lead.country}</span>
                         {lead.categoryName && (
-                          <span className="mono text-[11px] truncate max-w-xs">
+                          <span className="font-mono text-[11px] truncate max-w-xs text-tx-subtle">
                             • {lead.categoryName}
                           </span>
                         )}
@@ -620,20 +643,21 @@ export const DashboardPage: React.FC = () => {
 
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         {isMetaIntegrated && (
-                          <span className="pill-luxury on text-[10px] flex items-center gap-1">
+                          <Pill active className="text-[10px] flex items-center gap-1">
                             <Radio className="w-2.5 h-2.5" />
-                            Meta Integrated
-                          </span>
+                            <span>Meta Integrated</span>
+                          </Pill>
                         )}
                         {isAdsRunning && (
                           <a
                             href={adLibraryUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="pill-luxury text-[10px] flex items-center gap-1"
                           >
-                            <Target className="w-2.5 h-2.5" />
-                            Active Ads ↗
+                            <Pill className="text-[10px] flex items-center gap-1">
+                              <Target className="w-2.5 h-2.5" />
+                              <span>Active Ads ↗</span>
+                            </Pill>
                           </a>
                         )}
                       </div>
@@ -642,63 +666,66 @@ export const DashboardPage: React.FC = () => {
                     <div className="flex items-center gap-2 self-start sm:self-center">
                       {phone && (
                         <>
-                          <a
-                            href={`tel:${phone}`}
-                            className="btn-ghost p-2"
-                            title="Call Phone"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
+                          <a href={`tel:${phone}`}>
+                            <Button variant="ghost" size="sm" className="p-2" title="Call Phone">
+                              <Phone className="w-3.5 h-3.5" />
+                            </Button>
                           </a>
                           {waLink && (
                             <a
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="btn-solid text-xs flex items-center gap-1 py-1.5 px-3"
                             >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span>WhatsApp</span>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+                                <span>WhatsApp</span>
+                              </Button>
                             </a>
                           )}
                         </>
                       )}
 
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => navigate(`/leads/${lead.id}`)}
-                        className="btn-ghost text-xs py-1.5 px-3"
                       >
                         Details
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Right Column: Upcoming Google Meet Strategy Calls */}
-        <div className="card-luxury p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div>
-              <h2 className="serif text-base font-bold text-black flex items-center gap-2">
-                <Video className="w-4 h-4 text-black" />
+              <h2 className="font-serif text-base font-bold text-tx flex items-center gap-2">
+                <Video className="w-4 h-4 text-tx" />
                 <span>Upcoming Calls</span>
               </h2>
-              <p className="text-xs text-[#525252] mt-0.5">Google Meet strategy sessions</p>
+              <p className="text-xs text-tx-muted mt-0.5">Google Meet strategy sessions</p>
             </div>
-            <NavLink to="/meetings" className="text-xs text-black hover:underline font-semibold">
+            <NavLink to="/meetings" className="text-xs text-tx hover:opacity-70 font-semibold transition">
               All
             </NavLink>
           </div>
 
           {upcomingMeetings.length === 0 ? (
-            <div className="py-12 text-center text-[#737373] text-xs space-y-2">
-              <Calendar className="w-8 h-8 text-[#737373] mx-auto" />
+            <div className="py-12 text-center text-tx-muted text-xs space-y-2">
+              <Calendar className="w-8 h-8 text-tx-subtle mx-auto" />
               <p>No strategy calls scheduled for today.</p>
               <NavLink
                 to="/meetings"
-                className="text-black font-semibold hover:underline text-xs inline-block"
+                className="text-tx font-semibold hover:opacity-70 text-xs inline-block transition"
               >
                 + Schedule Call
               </NavLink>
@@ -706,10 +733,10 @@ export const DashboardPage: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {upcomingMeetings.map((m) => (
-                <div key={m.id} className="p-3.5 bg-white border border-[#E5E5E5] rounded-xl space-y-2 shadow-sm">
-                  <div className="serif font-semibold text-black text-xs">{m.title}</div>
-                  <div className="text-[11px] text-[#525252] flex items-center gap-1 mono">
-                    <Clock className="w-3 h-3 text-black" />
+                <div key={m.id} className="p-3.5 bg-surface-2 border border-border rounded-xl space-y-2">
+                  <div className="font-serif font-semibold text-tx text-xs">{m.title}</div>
+                  <div className="text-[11px] text-tx-muted flex items-center gap-1 font-mono">
+                    <Clock className="w-3 h-3 text-tx" />
                     <span>
                       {new Date(m.startTime).toLocaleString(undefined, {
                         dateStyle: 'short',
@@ -722,132 +749,102 @@ export const DashboardPage: React.FC = () => {
                       href={m.meetLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 w-full btn-solid text-xs flex items-center justify-center gap-1.5"
+                      className="block mt-2"
                     >
-                      <Video className="w-3.5 h-3.5" />
-                      <span>Join Google Meet</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full justify-center"
+                      >
+                        <Video className="w-3.5 h-3.5 mr-1.5" />
+                        <span>Join Google Meet</span>
+                        <ExternalLink className="w-3 h-3 ml-1.5" />
+                      </Button>
                     </a>
                   )}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Task Delegation Modal */}
-      {showTaskModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-black" />
-                <h3 className="serif text-base font-bold text-black">Delegate New Sales Task</h3>
-              </div>
-              <button
-                onClick={() => setShowTaskModal(false)}
-                className="p-1.5 text-[#737373] hover:text-black rounded-lg hover:bg-[#F0F0F0]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        title="Delegate New Sales Task"
+      >
+        <form onSubmit={handleCreateTask} className="space-y-4">
+          <Input
+            label="Task Title *"
+            required
+            placeholder="e.g. WhatsApp follow-up with Dubai clinic owner"
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
+          />
 
-            <form onSubmit={handleCreateTask} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Task Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. WhatsApp follow-up with Dubai clinic owner"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black focus:outline-none focus:border-black"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="Assign To *"
+              required
+              value={taskAssignee}
+              onChange={(e) => setTaskAssignee(e.target.value)}
+            >
+              {assignees.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.role})
+                </option>
+              ))}
+            </Select>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                    Assign To *
-                  </label>
-                  <select
-                    value={taskAssignee}
-                    onChange={(e) => setTaskAssignee(e.target.value)}
-                    className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black focus:outline-none focus:border-black font-medium"
-                    required
-                  >
-                    {assignees.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({a.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={taskPriority}
-                    onChange={(e) => setTaskPriority(e.target.value as any)}
-                    className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black focus:outline-none focus:border-black"
-                  >
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Due Date (Optional)
-                </label>
-                <input
-                  type="date"
-                  value={taskDueDate}
-                  onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black focus:outline-none focus:border-black mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Instructions / Notes
-                </label>
-                <textarea
-                  rows={3}
-                  value={taskNotes}
-                  onChange={(e) => setTaskNotes(e.target.value)}
-                  placeholder="Pitch our Google & Meta Ads services, schedule strategy meeting..."
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl p-3 text-xs text-black focus:outline-none focus:border-black"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3 border-t border-[#E5E5E5]">
-                <button
-                  type="button"
-                  onClick={() => setShowTaskModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingTask}
-                  className="btn-solid text-xs flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {creatingTask ? 'Assigning...' : 'Assign Task'}
-                </button>
-              </div>
-            </form>
+            <Select
+              label="Priority"
+              value={taskPriority}
+              onChange={(e) => setTaskPriority(e.target.value as any)}
+            >
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </Select>
           </div>
-        </div>
-      )}
+
+          <Input
+            type="date"
+            label="Due Date (Optional)"
+            value={taskDueDate}
+            onChange={(e) => setTaskDueDate(e.target.value)}
+            className="font-mono"
+          />
+
+          <Textarea
+            rows={3}
+            label="Instructions / Notes"
+            value={taskNotes}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTaskNotes(e.target.value)}
+            placeholder="Pitch our Google & Meta Ads services, schedule strategy meeting..."
+          />
+
+          <div className="pt-2 flex justify-end gap-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowTaskModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={creatingTask}
+            >
+              Assign task
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
