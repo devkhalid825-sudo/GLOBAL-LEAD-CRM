@@ -125,7 +125,7 @@ export const ProposalsPage: React.FC = () => {
       const res = await apiFetch<{
         success: boolean;
         data: { title: string; items: ProposalItem[]; notes: string };
-      }>('/proposals/generate-ai', {
+      }>('/proposals/ai-generate', {
         method: 'POST',
         body: JSON.stringify({ leadId }),
       });

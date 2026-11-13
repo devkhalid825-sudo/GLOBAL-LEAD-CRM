@@ -75,6 +75,8 @@ export const LeadDetailPage: React.FC = () => {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
+  const [copiedCallHook, setCopiedCallHook] = useState(false);
+  const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
   const [showWebPreview, setShowWebPreview] = useState(false);
 
   // Ad Preview & Strategy Meeting states
@@ -552,10 +554,11 @@ export const LeadDetailPage: React.FC = () => {
                 <button
                   onClick={fetchAiAudit}
                   disabled={loadingAudit}
-                  className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1"
+                  className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                  title="Run deep AI commercial analysis & diagnostic"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>AI audit</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{loadingAudit ? 'Analyzing...' : 'AI Lead Analyzer'}</span>
                 </button>
               </div>
             </div>
@@ -595,27 +598,109 @@ export const LeadDetailPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* AI Audit Output Box */}
+          {/* AI Lead Analyzer Comprehensive Diagnostic Card */}
           {aiAudit && (
             <Card className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-tx" />
-                  <h3 className="serif text-sm font-semibold text-tx">AI commercial audit</h3>
+              <div className="flex items-start justify-between pb-3 border-b border-border">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-tx" />
+                    <h3 className="serif text-sm font-semibold text-tx">AI Lead Analyzer</h3>
+                  </div>
+                  <p className="text-[11px] text-tx-subtle">
+                    Commercial assessment &amp; pitch strategy for {lead.name}
+                  </p>
                 </div>
-                <button onClick={() => setAiAudit(null)} className="text-tx-subtle hover:text-tx text-xs">✕</button>
+                <div className="flex items-center gap-2">
+                  {aiAudit.estimatedDealValue && (
+                    <span className="px-2 py-0.5 bg-surface-2 border border-border rounded text-[11px] mono font-semibold text-tx">
+                      {aiAudit.estimatedDealValue}
+                    </span>
+                  )}
+                  <button onClick={() => setAiAudit(null)} className="text-tx-subtle hover:text-tx text-xs p-1">✕</button>
+                </div>
               </div>
 
-              <div className="space-y-2 text-xs">
+              {/* Opportunity Synopsis */}
+              {aiAudit.businessOpportunity && (
+                <div className="bg-surface-2 p-3 rounded-btn border border-border text-xs text-tx leading-relaxed">
+                  <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider block mb-1">Growth Opportunity:</span>
+                  {aiAudit.businessOpportunity}
+                </div>
+              )}
+
+              {/* High-Ticket Services Needed */}
+              {Array.isArray(aiAudit.neededServices) && aiAudit.neededServices.length > 0 && (
+                <div className="space-y-1.5 text-xs">
+                  <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider block">Recommended Services to Pitch:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiAudit.neededServices.map((service: string, idx: number) => (
+                      <span key={idx} className="px-2 py-1 bg-surface-2 border border-border rounded text-[11px] text-tx">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Meta & Facebook Ads Diagnostic */}
+              {aiAudit.metaAudit && (
+                <div className="p-3 bg-surface-2 rounded-btn border border-border space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider">Meta Pixel &amp; Ad Intel:</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded mono font-medium ${
+                      aiAudit.metaAudit.hasMetaPixel
+                        ? 'bg-surface-1 border border-border text-tx'
+                        : 'bg-surface-1 border border-border text-tx-muted'
+                    }`}>
+                      {aiAudit.metaAudit.hasMetaPixel ? '● Pixel Active' : '○ No Pixel Detected'}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-tx-muted leading-relaxed">
+                    {aiAudit.metaAudit.adStatus}
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    {aiAudit.metaAudit.adLibraryUrl && (
+                      <a
+                        href={aiAudit.metaAudit.adLibraryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ghost text-[11px] py-1 px-2.5 inline-flex items-center gap-1.5"
+                      >
+                        <ExternalLink className="w-3 h-3 text-tx-subtle" />
+                        <span>Ad Library</span>
+                      </a>
+                    )}
+                    {aiAudit.metaAudit.metaPitchScript && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiAudit.metaAudit.metaPitchScript);
+                          setCopiedMetaPitch(true);
+                          setTimeout(() => setCopiedMetaPitch(false), 2000);
+                        }}
+                        className="btn-ghost text-[11px] py-1 px-2.5 inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>{copiedMetaPitch ? 'Copied' : 'Copy Meta Pitch'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pitch Script with Multi-Language Translation */}
+              <div className="space-y-2 text-xs pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-tx-subtle block">Recommended pitch script:</span>
+                  <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider">WhatsApp Outreach Script:</span>
                   {activeDetailLang !== 'English' && (
                     <span className="text-[10px] text-tx mono font-semibold">[{activeDetailLang}]</span>
                   )}
                 </div>
 
                 {/* 1-Click Multi-Language Translation Pill Bar */}
-                <div className="flex items-center gap-1.5 flex-wrap my-1.5 text-[11px]">
+                <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
                   <Languages className="w-3.5 h-3.5 text-tx" />
                   <span className="text-[10px] text-tx-subtle mono mr-1">Translate:</span>
                   {['English', 'Arabic', 'Spanish', 'German', 'French', 'Urdu'].map((lang) => (
@@ -641,18 +726,55 @@ export const LeadDetailPage: React.FC = () => {
                 <p className="bg-surface-2 p-3 rounded-btn border border-border mono text-[11px] leading-relaxed text-tx">
                   "{translatedPitchText || aiAudit.whatsappPitchScript || aiAudit.businessOpportunity}"
                 </p>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(translatedPitchText || aiAudit.whatsappPitchScript || aiAudit.businessOpportunity);
-                    setCopiedPitch(true);
-                    setTimeout(() => setCopiedPitch(false), 2000);
-                  }}
-                  className="btn-ghost text-xs py-1 px-2.5 inline-flex items-center gap-1"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>{copiedPitch ? 'Copied' : 'Copy script'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(translatedPitchText || aiAudit.whatsappPitchScript || aiAudit.businessOpportunity);
+                      setCopiedPitch(true);
+                      setTimeout(() => setCopiedPitch(false), 2000);
+                    }}
+                    className="btn-ghost text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedPitch ? 'Copied' : 'Copy Script'}</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Cold Call Hook */}
+              {aiAudit.callPitchHook && (
+                <div className="p-3 bg-surface-2 rounded-btn border border-border space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider">Cold Call Hook:</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(aiAudit.callPitchHook);
+                        setCopiedCallHook(true);
+                        setTimeout(() => setCopiedCallHook(false), 2000);
+                      }}
+                      className="btn-ghost text-[10px] py-0.5 px-2 inline-flex items-center gap-1"
+                    >
+                      <Copy className="w-2.5 h-2.5" />
+                      <span>{copiedCallHook ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <p className="mono text-[11px] text-tx italic leading-relaxed">
+                    "{aiAudit.callPitchHook}"
+                  </p>
+                </div>
+              )}
+
+              {/* Pain Points */}
+              {Array.isArray(aiAudit.painPoints) && aiAudit.painPoints.length > 0 && (
+                <div className="space-y-1 text-xs pt-1">
+                  <span className="text-[10px] text-tx-subtle mono uppercase tracking-wider block">Key Client Pain Points:</span>
+                  <ul className="space-y-1 pl-4 list-disc text-[11px] text-tx-muted">
+                    {aiAudit.painPoints.map((point: string, idx: number) => (
+                      <li key={idx}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Card>
           )}
         </div>
