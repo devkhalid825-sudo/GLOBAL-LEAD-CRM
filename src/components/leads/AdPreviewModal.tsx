@@ -12,6 +12,7 @@ import {
   Search,
   Sparkles,
   RefreshCw,
+  Languages,
 } from 'lucide-react';
 import { api } from '../../api/client.js';
 import { Button, Pill, Textarea, Skeleton } from '../ui/index.js';
@@ -60,6 +61,31 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
     } finally {
       setLoadingLiveAds(false);
       setLiveAdsChecked(true);
+    }
+  };
+
+  const [translating, setTranslating] = useState(false);
+  const [activeLang, setActiveLang] = useState('English');
+
+  const handleTranslatePitch = async (targetLang: string) => {
+    setActiveLang(targetLang);
+    if (targetLang === 'English') {
+      setPitchText(defaultPitch);
+      return;
+    }
+    setTranslating(true);
+    try {
+      const res: any = await api.post('/ai/translate', {
+        text: pitchText,
+        targetLanguage: targetLang,
+      });
+      if (res?.translatedText) {
+        setPitchText(res.translatedText);
+      }
+    } catch {
+      // fallback
+    } finally {
+      setTranslating(false);
     }
   };
 
@@ -417,6 +443,30 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
               <div className="flex items-center justify-between mb-2">
                 <h3 className="serif text-lg font-semibold text-tx">Tailored cold outreach pitch</h3>
                 <span className="text-[11px] text-tx-subtle mono">1-click direct dispatch</span>
+              </div>
+
+              {/* Pitch Translator Bar */}
+              <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1 text-[11px]">
+                <Languages className="w-3.5 h-3.5 text-tx" />
+                <span className="text-[10px] text-tx-subtle mono mr-1">Translate pitch:</span>
+                {['English', 'Arabic', 'Spanish', 'German', 'French', 'Urdu'].map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => handleTranslatePitch(lang)}
+                    disabled={translating}
+                    className={`px-2 py-0.5 rounded text-[10px] transition ${
+                      activeLang === lang
+                        ? 'bg-tx text-canvas font-semibold'
+                        : 'bg-surface-2 hover:bg-surface-1 border border-border text-tx-muted hover:text-tx'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+                {translating && (
+                  <span className="text-[10px] text-tx-subtle mono animate-pulse">Translating...</span>
+                )}
               </div>
 
               <Textarea

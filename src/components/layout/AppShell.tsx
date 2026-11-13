@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar.js';
 import { Topbar } from './Topbar.js';
+import { AiCopilotModal } from '../ai/AiCopilotModal.js';
 import { api } from '../../api/client.js';
 
 export const AppShell: React.FC = () => {
@@ -35,6 +36,9 @@ export const AppShell: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating Global AI Sales Copilot */}
+      <AiCopilotModal />
     </div>
   );
 };

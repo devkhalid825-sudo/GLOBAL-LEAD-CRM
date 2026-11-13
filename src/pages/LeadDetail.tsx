@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Copy,
   CheckCircle2,
+  Languages,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
 import { VoiceNoteRecorder, VoiceNotePlayer } from '../components/timeline/VoiceNoteRecorder.js';
@@ -74,6 +75,50 @@ export const LeadDetailPage: React.FC = () => {
   const [schedulingMeeting, setSchedulingMeeting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [copiedMeetLink, setCopiedMeetLink] = useState(false);
+  const [translatingDetailPitch, setTranslatingDetailPitch] = useState(false);
+  const [activeDetailLang, setActiveDetailLang] = useState('English');
+  const [translatedPitchText, setTranslatedPitchText] = useState<string | null>(null);
+  const [polishingNotes, setPolishingNotes] = useState(false);
+
+  const handleTranslateDetailPitch = async (targetLang: string) => {
+    setActiveDetailLang(targetLang);
+    const baseText = aiAudit?.whatsappPitchScript || aiAudit?.businessOpportunity || '';
+    if (targetLang === 'English') {
+      setTranslatedPitchText(null);
+      return;
+    }
+    setTranslatingDetailPitch(true);
+    try {
+      const res: any = await api.post('/ai/translate', {
+        text: baseText,
+        targetLanguage: targetLang,
+      });
+      if (res?.translatedText) {
+        setTranslatedPitchText(res.translatedText);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTranslatingDetailPitch(false);
+    }
+  };
+
+  const handleSummarizeCallNotes = async () => {
+    if (!callNotes.trim()) return;
+    setPolishingNotes(true);
+    try {
+      const res: any = await api.post('/ai/chat', {
+        message: `Summarize the following raw call/meeting notes into clean, bullet-pointed professional meeting minutes with action items:\n\n${callNotes}`,
+      });
+      if (res?.reply) {
+        setCallNotes(res.reply);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setPolishingNotes(false);
+    }
+  };
 
   // Speech-to-Text (Voice Typing) state
   const [isListening, setIsListening] = useState(false);
@@ -529,13 +574,43 @@ export const LeadDetailPage: React.FC = () => {
               </div>
 
               <div className="space-y-2 text-xs">
-                <span className="text-tx-subtle block">Recommended pitch script:</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-tx-subtle block">Recommended pitch script:</span>
+                  {activeDetailLang !== 'English' && (
+                    <span className="text-[10px] text-tx mono font-semibold">[{activeDetailLang}]</span>
+                  )}
+                </div>
+
+                {/* 1-Click Multi-Language Translation Pill Bar */}
+                <div className="flex items-center gap-1.5 flex-wrap my-1.5 text-[11px]">
+                  <Languages className="w-3.5 h-3.5 text-tx" />
+                  <span className="text-[10px] text-tx-subtle mono mr-1">Translate:</span>
+                  {['English', 'Arabic', 'Spanish', 'German', 'French', 'Urdu'].map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleTranslateDetailPitch(lang)}
+                      disabled={translatingDetailPitch}
+                      className={`px-2 py-0.5 rounded text-[10px] transition ${
+                        activeDetailLang === lang
+                          ? 'bg-tx text-canvas font-semibold'
+                          : 'bg-surface-2 hover:bg-surface-1 border border-border text-tx-muted hover:text-tx'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                  {translatingDetailPitch && (
+                    <span className="text-[10px] text-tx-subtle mono animate-pulse">Translating...</span>
+                  )}
+                </div>
+
                 <p className="bg-surface-2 p-3 rounded-btn border border-border mono text-[11px] leading-relaxed text-tx">
-                  "{aiAudit.whatsappPitchScript || aiAudit.businessOpportunity}"
+                  "{translatedPitchText || aiAudit.whatsappPitchScript || aiAudit.businessOpportunity}"
                 </p>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(aiAudit.whatsappPitchScript || aiAudit.businessOpportunity);
+                    navigator.clipboard.writeText(translatedPitchText || aiAudit.whatsappPitchScript || aiAudit.businessOpportunity);
                     setCopiedPitch(true);
                     setTimeout(() => setCopiedPitch(false), 2000);
                   }}
@@ -748,40 +823,77 @@ export const LeadDetailPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Log Call Modal */}
+      {/* Call Notepad & Meeting Minutes Modal */}
       <Modal
         isOpen={showCallModal}
         onClose={() => setShowCallModal(false)}
-        title="Log call outcome"
+        title="AI Call Notepad & Meeting Minutes"
       >
         <form onSubmit={handleLogCall} className="space-y-4">
-          <Select
-            label="Call outcome"
-            value={callOutcome}
-            onChange={(e) => setCallOutcome(e.target.value)}
-          >
-            <option value="connected">Connected &amp; spoke with owner</option>
-            <option value="busy">Line busy</option>
-            <option value="wrong_number">Wrong number</option>
-            <option value="left_voicemail">Left voicemail</option>
-            <option value="callback_scheduled">Follow-up callback scheduled</option>
-          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Call outcome"
+              value={callOutcome}
+              onChange={(e) => setCallOutcome(e.target.value)}
+            >
+              <option value="connected">Connected &amp; spoke with owner</option>
+              <option value="busy">Line busy</option>
+              <option value="wrong_number">Wrong number</option>
+              <option value="left_voicemail">Left voicemail</option>
+              <option value="callback_scheduled">Follow-up callback scheduled</option>
+            </Select>
 
-          <Input
-            label="Duration (seconds)"
-            type="number"
-            min={0}
-            value={callDuration}
-            onChange={(e) => setCallDuration(parseInt(e.target.value, 10) || 0)}
-          />
+            <Input
+              label="Duration (seconds)"
+              type="number"
+              min={0}
+              value={callDuration}
+              onChange={(e) => setCallDuration(parseInt(e.target.value, 10) || 0)}
+            />
+          </div>
 
-          <Textarea
-            label="Call notes"
-            rows={3}
-            value={callNotes}
-            onChange={(e) => setCallNotes(e.target.value)}
-            placeholder="Discussed marketing retainers, agreed to send proposal..."
-          />
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium text-tx-muted">Call &amp; meeting minutes notepad</label>
+              <button
+                type="button"
+                onClick={handleSummarizeCallNotes}
+                disabled={polishingNotes || !callNotes.trim()}
+                className="text-[10px] text-tx mono border border-border px-2 py-0.5 rounded bg-surface-2 hover:bg-surface-1 inline-flex items-center gap-1 transition"
+              >
+                <Sparkles className="w-3 h-3 text-tx" />
+                <span>{polishingNotes ? 'AI Structuring...' : 'AI Format Minutes'}</span>
+              </button>
+            </div>
+
+            {/* Quick Template Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap mb-2">
+              <span className="text-[10px] text-tx-subtle mono">Insert:</span>
+              {[
+                { label: '+ Pain points', text: '\n• Pain Point: ' },
+                { label: '+ Pricing/Budget', text: '\n• Budget / Deal Size: ' },
+                { label: '+ Next Action', text: '\n• Action Item: ' },
+                { label: '+ Objection', text: '\n• Client Objection: ' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setCallNotes((prev) => `${prev}${chip.text}`)}
+                  className="text-[10px] bg-surface-2 hover:bg-surface-1 border border-border text-tx-muted hover:text-tx px-2 py-0.5 rounded transition"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            <Textarea
+              rows={6}
+              value={callNotes}
+              onChange={(e) => setCallNotes(e.target.value)}
+              placeholder="Take live notes during call or meeting. No audio recording stored on server; notes are permanently organized in client history..."
+              className="font-mono text-xs"
+            />
+          </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button
@@ -798,7 +910,7 @@ export const LeadDetailPage: React.FC = () => {
               loading={submittingCall}
               size="sm"
             >
-              Save outcome
+              Save meeting notepad
             </Button>
           </div>
         </form>
