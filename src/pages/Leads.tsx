@@ -449,6 +449,14 @@ export const LeadsPage: React.FC = () => {
                     <Td className="text-right">
                       <div className="inline-flex items-center justify-end gap-1.5">
                         <button
+                          onClick={() => navigate(`/leads/${lead.id}?tab=analyze`)}
+                          className="btn-ghost text-xs py-1 px-2.5 flex items-center gap-1"
+                          title="Run AI Lead Analyzer for services & pitch hooks"
+                        >
+                          <Sparkles className="w-3 h-3 text-tx" />
+                          <span>Analyze</span>
+                        </button>
+                        <button
                           onClick={() => setPreviewAdLead(lead)}
                           className="btn-solid text-xs py-1 px-3 flex items-center gap-1"
                           title="Inspect simulated live Ad creative mockup"

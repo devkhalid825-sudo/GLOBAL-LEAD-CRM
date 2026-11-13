@@ -249,7 +249,12 @@ export const LeadDetailPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (id) fetchLeadData();
+    if (id) {
+      fetchLeadData();
+      if (window.location.search.includes('analyze')) {
+        fetchAiAudit();
+      }
+    }
   }, [id]);
 
   const handleAddNote = async (e: React.FormEvent) => {
