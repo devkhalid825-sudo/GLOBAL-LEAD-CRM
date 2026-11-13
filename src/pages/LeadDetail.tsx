@@ -283,6 +283,15 @@ export const LeadDetailPage: React.FC = () => {
     }
   };
 
+  const generateAiEmailDraft = () => {
+    if (!lead) return;
+    const cleanCategory = lead.categoryName?.split('(')[0]?.trim() || 'business';
+    setEmailSubject(`Growth & Customer Acquisition for ${lead.name}`);
+    setEmailBody(
+      `Hi ${lead.name} team,\n\nI was reviewing your business presence in ${lead.city || 'your area'} and noticed strong market potential for your ${cleanCategory} operations.\n\nWe build high-converting client acquisition systems, Meta ad funnels, and custom digital automation that cut overheads and accelerate verified inquiries.\n\nWould you be open to a brief 5-minute conversation this week to explore this?\n\nBest regards,\nMuhammad Khalid\nGlobal CRM Team`
+    );
+  };
+
   if (loading) {
     return (
       <div className="py-16 space-y-4 max-w-6xl mx-auto">
@@ -378,7 +387,24 @@ export const LeadDetailPage: React.FC = () => {
                 </div>
                 <div className="py-2.5 flex items-center justify-between">
                   <span className="text-tx-muted">Email</span>
-                  <span className="text-tx font-medium truncate max-w-[180px]">{leadEmail || 'None detected'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-tx font-medium truncate max-w-[150px]">{leadEmail || 'None detected'}</span>
+                    {lead.website && (
+                      <button
+                        type="button"
+                        onClick={handleScrapeEmail}
+                        disabled={isScrapingEmail}
+                        className="btn-ghost text-[10px] py-0.5 px-2 rounded-btn border border-border flex items-center gap-1"
+                        title="Extract public contact emails from business website"
+                      >
+                        {isScrapingEmail ? (
+                          <div className="w-2.5 h-2.5 border border-tx border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <span>Extract</span>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="py-2.5 flex items-center justify-between">
                   <span className="text-tx-muted">Location</span>
@@ -786,6 +812,18 @@ export const LeadDetailPage: React.FC = () => {
       >
         {emailError && <p className="text-xs text-tx-muted mb-2">{emailError}</p>}
         <form onSubmit={handleSendLeadEmail} className="space-y-4">
+          <div className="flex items-center justify-between pb-1">
+            <span className="text-[11px] text-tx-subtle mono">Auto-draft pitch</span>
+            <button
+              type="button"
+              onClick={generateAiEmailDraft}
+              className="btn-ghost text-xs py-1 px-2.5 flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-tx" />
+              <span>Draft with Gemini AI</span>
+            </button>
+          </div>
+
           <Input
             label="Recipient email"
             type="email"
