@@ -6,12 +6,12 @@ import {
   Users,
   PhoneCall,
   CheckCircle2,
-  XCircle,
   Globe,
   Tag,
   RefreshCw,
   Award,
 } from 'lucide-react';
+import { Card, Button, Pill } from '../components/ui/index.js';
 
 interface OverviewData {
   totalLeads: number;
@@ -76,102 +76,104 @@ export const ReportsPage: React.FC = () => {
   }, []);
 
   const pipelineStages = [
-    { key: 'new', label: 'New Leads', color: 'bg-blue-500', text: 'text-blue-400' },
-    { key: 'contacted', label: 'Contacted', color: 'bg-amber-500', text: 'text-amber-400' },
-    { key: 'interested', label: 'Interested', color: 'bg-indigo-500', text: 'text-indigo-400' },
-    { key: 'meeting', label: 'Meeting Set', color: 'bg-purple-500', text: 'text-purple-400' },
-    { key: 'proposal', label: 'Proposal Sent', color: 'bg-cyan-500', text: 'text-cyan-400' },
-    { key: 'won', label: 'Deals Won', color: 'bg-emerald-500', text: 'text-emerald-400' },
-    { key: 'lost', label: 'Deals Lost', color: 'bg-rose-500', text: 'text-rose-400' },
+    { key: 'new', label: 'New Leads' },
+    { key: 'contacted', label: 'Contacted' },
+    { key: 'interested', label: 'Interested' },
+    { key: 'meeting', label: 'Meeting Set' },
+    { key: 'proposal', label: 'Proposal Sent' },
+    { key: 'won', label: 'Deals Won' },
+    { key: 'lost', label: 'Deals Lost' },
   ];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-emerald-400" />
-            Analytics & Conversion Reports
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-tx leading-tight">
+            Analytics &amp; Reports.
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-sm text-tx-muted mt-2 font-sans">
             Real-time pipeline velocity, commercial conversion metrics, and regional performance.
           </p>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={fetchReports}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-sm transition-all"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
-          Refresh Metrics
-        </button>
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Metrics</span>
+        </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <Card className="p-5 space-y-2">
+          <div className="flex items-center justify-between text-tx-muted text-xs font-semibold uppercase tracking-wider">
             <span>Total Leads</span>
-            <Users className="w-5 h-5 text-blue-400" />
+            <Users className="w-4 h-4 text-tx" />
           </div>
-          <div className="text-3xl font-black text-white mt-3">
+          <div className="text-3xl font-bold text-tx font-mono">
             {overview ? overview.totalLeads.toLocaleString() : '—'}
           </div>
-          <div className="text-xs text-slate-400 mt-2">
-            <span className="text-emerald-400 font-bold">+{overview?.leadsThisWeek || 0}</span> in last 7 days
+          <div className="text-xs text-tx-subtle font-mono">
+            +{overview?.leadsThisWeek || 0} in last 7 days
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <Card className="p-5 space-y-2">
+          <div className="flex items-center justify-between text-tx-muted text-xs font-semibold uppercase tracking-wider">
             <span>Conversion Rate</span>
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-tx" />
           </div>
-          <div className="text-3xl font-black text-emerald-400 mt-3">
+          <div className="text-3xl font-bold text-tx font-mono">
             {overview ? `${overview.conversionRate}%` : '—'}
           </div>
-          <div className="text-xs text-slate-400 mt-2">
-            Lead to <span className="text-emerald-400">Won Client</span> ratio
+          <div className="text-xs text-tx-subtle">
+            Lead to won client ratio
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <Card className="p-5 space-y-2">
+          <div className="flex items-center justify-between text-tx-muted text-xs font-semibold uppercase tracking-wider">
             <span>Calls Logged</span>
-            <PhoneCall className="w-5 h-5 text-purple-400" />
+            <PhoneCall className="w-4 h-4 text-tx" />
           </div>
-          <div className="text-3xl font-black text-white mt-3">
+          <div className="text-3xl font-bold text-tx font-mono">
             {overview ? overview.totalCalls.toLocaleString() : '—'}
           </div>
-          <div className="text-xs text-slate-400 mt-2">
-            Outbound sales & follow-up calls
+          <div className="text-xs text-tx-subtle">
+            Outbound sales &amp; follow-up calls
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+        <Card className="p-5 space-y-2">
+          <div className="flex items-center justify-between text-tx-muted text-xs font-semibold uppercase tracking-wider">
             <span>Deals Closed (Won)</span>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-tx" />
           </div>
-          <div className="text-3xl font-black text-white mt-3">
+          <div className="text-3xl font-bold text-tx font-mono">
             {overview ? (overview.pipeline.won || 0).toLocaleString() : '—'}
           </div>
-          <div className="text-xs text-slate-400 mt-2">
+          <div className="text-xs text-tx-subtle">
             Successfully closed accounts
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Commercial Conversion Funnel */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-400" />
-          Lead Pipeline Funnel
-        </h2>
-        <p className="text-xs text-slate-400 mb-6">
-          Distribution of all business leads across sales progression stages.
-        </p>
+      <Card className="p-6 space-y-4">
+        <div>
+          <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-tx" />
+            <span>Lead Pipeline Funnel</span>
+          </h2>
+          <p className="text-xs text-tx-muted mt-0.5">
+            Distribution of all business leads across sales progression stages.
+          </p>
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {pipelineStages.map((st) => {
@@ -182,20 +184,20 @@ export const ReportsPage: React.FC = () => {
             return (
               <div
                 key={st.key}
-                className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between"
+                className="bg-surface-2 border border-border rounded-xl p-4 flex flex-col justify-between"
               >
                 <div>
-                  <div className={`text-xs font-semibold ${st.text}`}>{st.label}</div>
-                  <div className="text-2xl font-black text-white mt-1">{count}</div>
+                  <div className="text-xs font-medium text-tx-muted">{st.label}</div>
+                  <div className="text-2xl font-bold text-tx font-mono mt-1">{count}</div>
                 </div>
                 <div className="mt-3">
-                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <div className="flex justify-between text-[11px] text-tx-subtle font-mono mb-1">
                     <span>Share</span>
                     <span>{pct}%</span>
                   </div>
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-surface-1 h-1.5 rounded-full overflow-hidden border border-border">
                     <div
-                      className={`h-full ${st.color} rounded-full`}
+                      className="h-full bg-tx rounded-full"
                       style={{ width: `${Math.max(pct, 4)}%` }}
                     />
                   </div>
@@ -204,37 +206,37 @@ export const ReportsPage: React.FC = () => {
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* Middle Row: Geo Distribution & Top Categories */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Geo Distribution */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Globe className="w-5 h-5 text-blue-400" />
-            Top Geographic Markets
+        <Card className="p-6 space-y-4">
+          <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+            <Globe className="w-5 h-5 text-tx" />
+            <span>Top Geographic Markets</span>
           </h2>
           {geoData.length === 0 ? (
-            <div className="text-slate-500 text-sm py-8 text-center">
+            <div className="text-tx-subtle text-xs py-8 text-center">
               No geographical lead data yet. Search leads from the Finder to populate.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {geoData.slice(0, 5).map((g) => (
-                <div key={g.country} className="bg-slate-950/40 border border-slate-800/60 rounded-xl p-4">
+                <div key={g.country} className="bg-surface-2 border border-border rounded-xl p-3.5">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-white text-sm">{g.country}</span>
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <span className="font-serif font-semibold text-tx text-xs">{g.country}</span>
+                    <Pill active className="text-[10px] font-mono">
                       {g.count} leads
-                    </span>
+                    </Pill>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-1.5 mt-2">
                     {g.cities.slice(0, 5).map((ct) => (
                       <span
                         key={ct.city}
-                        className="text-xs bg-slate-800/70 text-slate-300 px-2 py-1 rounded-md border border-slate-700/50"
+                        className="text-[11px] bg-surface-1 text-tx-muted px-2 py-0.5 rounded-md border border-border font-mono"
                       >
-                        {ct.city}: <strong className="text-white">{ct.count}</strong>
+                        {ct.city}: <strong className="text-tx">{ct.count}</strong>
                       </span>
                     ))}
                   </div>
@@ -242,16 +244,16 @@ export const ReportsPage: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Categories Distribution */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Tag className="w-5 h-5 text-amber-400" />
-            Top Business Categories
+        <Card className="p-6 space-y-4">
+          <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+            <Tag className="w-5 h-5 text-tx" />
+            <span>Top Business Categories</span>
           </h2>
           {categories.length === 0 ? (
-            <div className="text-slate-500 text-sm py-8 text-center">
+            <div className="text-tx-subtle text-xs py-8 text-center">
               No category data available yet.
             </div>
           ) : (
@@ -263,14 +265,14 @@ export const ReportsPage: React.FC = () => {
                 return (
                   <div key={cat.category} className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-200 font-medium">{cat.category}</span>
-                      <span className="text-slate-400 font-mono font-bold">
-                        {cat.count} <span className="text-slate-500 font-normal">({pct}%)</span>
+                      <span className="text-tx font-medium">{cat.category}</span>
+                      <span className="text-tx-muted font-mono font-medium">
+                        {cat.count} <span className="text-tx-subtle font-normal">({pct}%)</span>
                       </span>
                     </div>
-                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                    <div className="w-full bg-surface-2 h-2 rounded-full overflow-hidden border border-border">
                       <div
-                        className="h-full bg-amber-500 rounded-full"
+                        className="h-full bg-tx rounded-full"
                         style={{ width: `${Math.max(pct, 2)}%` }}
                       />
                     </div>
@@ -279,53 +281,53 @@ export const ReportsPage: React.FC = () => {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Team Leaderboard */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-emerald-400" />
-          Sales Team Performance Leaderboard
+      <Card className="p-6 space-y-4">
+        <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+          <Award className="w-5 h-5 text-tx" />
+          <span>Sales Team Performance Leaderboard</span>
         </h2>
         {team.length === 0 ? (
-          <div className="text-slate-500 text-sm py-6 text-center">
+          <div className="text-tx-subtle text-xs py-6 text-center">
             No team members registered yet.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="text-xs uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Sales Agent</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4 text-center">Assigned Leads</th>
-                  <th className="py-3 px-4 text-center">Calls Logged</th>
-                  <th className="py-3 px-4 text-center">Deals Won</th>
-                  <th className="py-3 px-4 text-center">Win Rate</th>
+            <table className="w-full text-left text-xs text-tx border-collapse">
+              <thead>
+                <tr className="border-b border-border text-tx-subtle text-[11px] bg-surface-2">
+                  <th className="py-2.5 px-3 font-medium">Sales Agent</th>
+                  <th className="py-2.5 px-3 font-medium">Email</th>
+                  <th className="py-2.5 px-3 font-medium text-center">Assigned Leads</th>
+                  <th className="py-2.5 px-3 font-medium text-center">Calls Logged</th>
+                  <th className="py-2.5 px-3 font-medium text-center">Deals Won</th>
+                  <th className="py-2.5 px-3 font-medium text-center">Win Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-border font-sans">
                 {team.map((ag) => {
                   const winRate =
                     ag.leadsAssigned > 0 ? Math.round((ag.wonCount / ag.leadsAssigned) * 100) : 0;
 
                   return (
-                    <tr key={ag.userId} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-white flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs font-bold">
+                    <tr key={ag.userId} className="hover:bg-row-hover transition">
+                      <td className="py-3 px-3 font-semibold text-tx flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-surface-2 border border-border text-tx flex items-center justify-center text-xs font-bold font-mono">
                           {ag.name.slice(0, 1).toUpperCase()}
                         </div>
-                        {ag.name}
+                        <span className="font-serif font-semibold">{ag.name}</span>
                       </td>
-                      <td className="py-3 px-4 text-slate-400 text-xs font-mono">{ag.email}</td>
-                      <td className="py-3 px-4 text-center font-bold text-white">{ag.leadsAssigned}</td>
-                      <td className="py-3 px-4 text-center font-bold text-purple-400">{ag.callsCount}</td>
-                      <td className="py-3 px-4 text-center font-bold text-emerald-400">{ag.wonCount}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                      <td className="py-3 px-3 text-tx-muted font-mono">{ag.email}</td>
+                      <td className="py-3 px-3 text-center font-bold text-tx font-mono">{ag.leadsAssigned}</td>
+                      <td className="py-3 px-3 text-center font-bold text-tx font-mono">{ag.callsCount}</td>
+                      <td className="py-3 px-3 text-center font-bold text-tx font-mono">{ag.wonCount}</td>
+                      <td className="py-3 px-3 text-center">
+                        <Pill active={winRate > 20} className="text-[10px] font-mono">
                           {winRate}%
-                        </span>
+                        </Pill>
                       </td>
                     </tr>
                   );
@@ -334,7 +336,7 @@ export const ReportsPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

@@ -7,14 +7,19 @@ import {
   Search,
   RefreshCw,
   Plus,
-  FileText,
-  Clock,
   CheckCircle2,
   AlertCircle,
-  X,
-  ExternalLink,
   ChevronLeft,
 } from 'lucide-react';
+import {
+  Card,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Modal,
+  Pill,
+} from '../components/ui/index.js';
 
 interface EmailMessage {
   id: string;
@@ -139,66 +144,67 @@ export const InboxPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Inbox className="w-7 h-7 text-emerald-400" />
-            Unified Outreach Inbox
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-tx leading-tight">
+            Unified Outreach Inbox.
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-sm text-tx-muted mt-2 font-sans">
             Outbound commercial emails, responses, and automated lead follow-up logs.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={loadData}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition-all border border-slate-700"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
-            Refresh
-          </button>
-          <button
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => setIsComposeOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-900/20"
           >
-            <Plus className="w-4 h-4" />
-            Compose Email
-          </button>
+            <Plus className="w-4 h-4 mr-1.5" />
+            <span>Compose Email</span>
+          </Button>
         </div>
       </div>
 
       {/* Main Inbox Card */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+      <Card className="p-0 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
         {/* Email List Sidebar */}
         <div
-          className={`lg:col-span-5 border-r border-slate-800 flex flex-col ${
+          className={`lg:col-span-5 border-r border-border flex flex-col bg-surface-1 ${
             selectedEmail ? 'hidden lg:flex' : 'flex'
           }`}
         >
           {/* Search bar */}
-          <div className="p-4 border-b border-slate-800">
+          <div className="p-4 border-b border-border">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3 top-3 text-tx-subtle" />
               <input
                 type="text"
                 placeholder="Search subject or recipient..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="input-luxury pl-9 text-xs"
               />
             </div>
           </div>
 
           {/* List items */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/60">
+          <div className="flex-1 overflow-y-auto divide-y divide-border">
             {loading ? (
-              <div className="p-8 text-center text-slate-500 text-sm">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-400 mb-2" />
+              <div className="p-8 text-center text-tx-muted text-xs">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto text-tx mb-2" />
                 Loading messages...
               </div>
             ) : filteredEmails.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">
+              <div className="p-8 text-center text-tx-muted text-xs">
                 No email messages found. Click Compose Email to initiate outreach.
               </div>
             ) : (
@@ -208,31 +214,31 @@ export const InboxPage: React.FC = () => {
                   <div
                     key={msg.id}
                     onClick={() => setSelectedEmail(msg)}
-                    className={`p-4 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-slate-800/70' : 'hover:bg-slate-800/30'
+                    className={`p-4 cursor-pointer transition ${
+                      isSelected ? 'bg-surface-2' : 'hover:bg-row-hover'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-semibold text-white truncate max-w-[180px]">
+                      <span className="font-semibold text-tx truncate max-w-[180px]">
                         {msg.to}
                       </span>
-                      <span className="text-slate-500 text-[11px]">
+                      <span className="text-tx-subtle font-mono text-[11px]">
                         {new Date(msg.createdAt).toLocaleDateString([], {
                           month: 'short',
                           day: 'numeric',
                         })}
                       </span>
                     </div>
-                    <div className="text-sm font-medium text-slate-200 truncate">
+                    <div className="text-xs font-serif font-semibold text-tx truncate">
                       {msg.subject}
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-slate-400 truncate max-w-[220px]">
+                      <span className="text-xs text-tx-muted truncate max-w-[220px]">
                         {msg.bodyText || 'No plain text preview'}
                       </span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <Pill active={msg.status === 'sent'} className="text-[10px]">
                         {msg.status}
-                      </span>
+                      </Pill>
                     </div>
                   </div>
                 );
@@ -243,51 +249,51 @@ export const InboxPage: React.FC = () => {
 
         {/* Email Detail Preview */}
         <div
-          className={`lg:col-span-7 flex flex-col bg-slate-950/40 ${
+          className={`lg:col-span-7 flex flex-col bg-canvas ${
             selectedEmail ? 'flex' : 'hidden lg:flex'
           }`}
         >
           {selectedEmail ? (
             <div className="p-4 sm:p-6 flex-1 flex flex-col">
-              <div className="border-b border-slate-800 pb-4 mb-4">
+              <div className="border-b border-border pb-4 mb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedEmail(null)}
-                      className="lg:hidden p-1.5 -ml-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                      className="lg:hidden p-1.5 -ml-1 text-tx-muted hover:text-tx rounded-lg hover:bg-surface-2 transition"
                       title="Back to inbox list"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <h2 className="text-base sm:text-xl font-bold text-white leading-tight">
+                    <h2 className="font-serif text-base sm:text-xl font-bold text-tx leading-tight">
                       {selectedEmail.subject}
                     </h2>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
+                  <Pill active={selectedEmail.status === 'sent'} className="text-[10px] flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {selectedEmail.status.toUpperCase()}
-                  </span>
+                    <span>{selectedEmail.status.toUpperCase()}</span>
+                  </Pill>
                 </div>
-                <div className="mt-3 text-xs text-slate-400 space-y-1">
+                <div className="mt-3 text-xs text-tx-muted space-y-1 font-mono">
                   <div>
-                    <strong className="text-slate-300">From:</strong> {selectedEmail.from}
+                    <strong className="text-tx font-sans">From:</strong> {selectedEmail.from}
                   </div>
                   <div>
-                    <strong className="text-slate-300">To:</strong> {selectedEmail.to}
+                    <strong className="text-tx font-sans">To:</strong> {selectedEmail.to}
                   </div>
                   <div>
-                    <strong className="text-slate-300">Sent Date:</strong>{' '}
+                    <strong className="text-tx font-sans">Sent Date:</strong>{' '}
                     {new Date(selectedEmail.createdAt).toLocaleString()}
                   </div>
                 </div>
               </div>
 
               {/* Message Body */}
-              <div className="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl p-5 text-sm text-slate-200 leading-relaxed overflow-y-auto">
+              <div className="flex-1 bg-surface-1 border border-border rounded-xl p-5 text-xs text-tx leading-relaxed overflow-y-auto">
                 {selectedEmail.bodyHtml ? (
                   <div
                     dangerouslySetInnerHTML={{ __html: selectedEmail.bodyHtml }}
-                    className="prose prose-invert prose-sm max-w-none"
+                    className="prose prose-sm max-w-none text-tx"
                   />
                 ) : (
                   <pre className="font-sans whitespace-pre-wrap">{selectedEmail.bodyText}</pre>
@@ -295,136 +301,95 @@ export const InboxPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
-              <Mail className="w-12 h-12 text-slate-700 mb-3" />
-              <p className="text-sm">Select an email message from the list to preview content.</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-tx-subtle">
+              <Mail className="w-12 h-12 text-tx-subtle mb-3" />
+              <p className="text-xs">Select an email message from the list to preview content.</p>
             </div>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Compose Email Modal */}
-      {isComposeOpen && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Send className="w-5 h-5 text-emerald-400" />
-                Compose Outreach Email
-              </h3>
-              <button
-                onClick={() => setIsComposeOpen(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isComposeOpen}
+        onClose={() => setIsComposeOpen(false)}
+        title="Compose Outreach Email"
+      >
+        {composeError && (
+          <Card className="p-3 mb-4 text-xs text-tx flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{composeError}</span>
+          </Card>
+        )}
 
-            {composeError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {composeError}
-              </div>
-            )}
+        {composeSuccess && (
+          <Card className="p-3 mb-4 text-xs text-tx flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{composeSuccess}</span>
+          </Card>
+        )}
 
-            {composeSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                {composeSuccess}
-              </div>
-            )}
+        <form onSubmit={handleSendEmail} className="space-y-4">
+          <Select
+            label="Load Template (Optional)"
+            value={selectedTemplateId}
+            onChange={(e) => handleTemplateChange(e.target.value)}
+          >
+            <option value="">-- Choose pre-built template --</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.category})
+              </option>
+            ))}
+          </Select>
 
-            <form onSubmit={handleSendEmail} className="space-y-4">
-              {/* Template selector */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                  Load Template (Optional)
-                </label>
-                <select
-                  value={selectedTemplateId}
-                  onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">-- Choose pre-built template --</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <Input
+            type="email"
+            label="Recipient Email *"
+            placeholder="e.g. client@example.com"
+            value={composeTo}
+            onChange={(e) => setComposeTo(e.target.value)}
+            className="font-mono text-xs"
+            required
+          />
 
-              {/* To field */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                  Recipient Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="e.g. client@example.com"
-                  value={composeTo}
-                  onChange={(e) => setComposeTo(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
+          <Input
+            label="Subject Line *"
+            placeholder="e.g. Quick question regarding your online growth"
+            value={composeSubject}
+            onChange={(e) => setComposeSubject(e.target.value)}
+            required
+          />
 
-              {/* Subject */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                  Subject Line
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Quick question regarding your online growth"
-                  value={composeSubject}
-                  onChange={(e) => setComposeSubject(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                  required
-                />
-              </div>
+          <Textarea
+            rows={6}
+            label="Message Body"
+            placeholder="Write your email body or select a template above..."
+            value={composeBody}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComposeBody(e.target.value)}
+            required
+          />
 
-              {/* Body */}
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
-                  Message Body
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="Write your email body or select a template above..."
-                  value={composeBody}
-                  onChange={(e) => setComposeBody(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-sans"
-                  required
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsComposeOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-50 shadow-lg shadow-emerald-900/20"
-                >
-                  {sending ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  {sending ? 'Sending...' : 'Send Message'}
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-3 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsComposeOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={sending}
+            >
+              Send Message
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };

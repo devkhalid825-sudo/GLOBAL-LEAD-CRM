@@ -9,13 +9,20 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
-  X,
   Sparkles,
   Phone,
   MessageCircle,
   Globe,
   Building,
 } from 'lucide-react';
+import {
+  Card,
+  Button,
+  Input,
+  Select,
+  Modal,
+  Pill,
+} from '../components/ui/index.js';
 
 interface MeetingLead {
   id: string;
@@ -171,81 +178,91 @@ export const MeetingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Editorial Luxury Header matching Figma */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#E5E5E5]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-black leading-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-tx leading-tight">
             Meetings &amp; Video Calls.
           </h1>
-          <p className="text-sm text-[#525252] mt-2 font-sans">
+          <p className="text-sm text-tx-muted mt-2 font-sans">
             Google Meet video conferencing, client strategy sessions, and pipeline synchronization.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleSeedTestMeetings}
-            disabled={seeding}
-            className="btn-solid text-xs flex items-center gap-1.5"
+            loading={seeding}
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{seeding ? 'Generating...' : 'Seed Test Meetings'}</span>
-          </button>
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <span>Seed Test Meetings</span>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={loadMeetings}
             disabled={loading}
-            className="btn-ghost text-xs p-2.5"
+            className="p-2.5"
             title="Refresh"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-black ${loading ? 'animate-spin' : ''}`} />
-          </button>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
 
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={openScheduleModal}
-            className="btn-solid text-xs flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-1.5" />
             <span>Schedule Call</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {notice && (
-        <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl text-black text-xs flex items-center justify-between">
+        <Card className="p-3.5 flex items-center justify-between text-xs text-tx">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-black flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-tx flex-shrink-0" />
             <span>{notice}</span>
           </div>
-          <button onClick={() => setNotice(null)} className="text-[#737373] hover:text-black">✕</button>
-        </div>
+          <button
+            onClick={() => setNotice(null)}
+            className="text-tx-subtle hover:text-tx font-mono"
+          >
+            ✕
+          </button>
+        </Card>
       )}
 
       {/* Meetings List */}
-      <div className="card-luxury p-6 space-y-4">
-        <div className="pb-3 border-b border-[#E5E5E5] flex items-center justify-between text-xs text-[#525252]">
-          <span className="font-semibold text-black">Scheduled Sessions ({meetings.length})</span>
-          <span className="mono">Google Meet Valid Links</span>
+      <Card className="p-6 space-y-4">
+        <div className="pb-3 border-b border-border flex items-center justify-between text-xs text-tx-muted">
+          <span className="font-semibold text-tx">Scheduled Sessions ({meetings.length})</span>
+          <span className="font-mono text-tx-subtle">Google Meet Valid Links</span>
         </div>
 
         {loading ? (
-          <div className="p-16 text-center text-[#737373] text-xs">
+          <div className="p-16 text-center text-tx-muted text-xs">
             Loading meetings calendar...
           </div>
         ) : meetings.length === 0 ? (
-          <div className="p-16 text-center text-[#737373] text-xs space-y-4">
-            <Calendar className="w-10 h-10 text-[#737373] mx-auto" />
+          <div className="p-16 text-center text-tx-muted text-xs space-y-4">
+            <Calendar className="w-10 h-10 text-tx-subtle mx-auto" />
             <p>No meetings scheduled yet. Click below to generate realistic test meetings with Google Meet links.</p>
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleSeedTestMeetings}
-              className="btn-solid text-xs inline-flex items-center gap-1.5"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               <span>Seed Test Meetings Now</span>
-            </button>
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-[#E5E5E5]">
+          <div className="divide-y divide-border">
             {meetings.map((m) => {
               const lead = m.lead;
               const phone = lead?.phoneNorm || (lead?.phones && lead?.phones[0]);
@@ -259,32 +276,34 @@ export const MeetingsPage: React.FC = () => {
               return (
                 <div
                   key={m.id}
-                  className="py-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 hover:bg-[#F0F0F0] px-2 rounded-xl transition"
+                  className="py-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 hover:bg-row-hover px-2 rounded-xl transition"
                 >
                   <div className="space-y-1.5 min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="serif font-semibold text-black text-sm">{m.title}</h3>
-                      <span className="pill-luxury text-[10px]">
+                      <h3 className="font-serif font-semibold text-tx text-sm">{m.title}</h3>
+                      <Pill active={m.status === 'scheduled'} className="text-[10px]">
                         {m.status.toUpperCase()}
-                      </span>
+                      </Pill>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#525252]">
-                      <span className="font-semibold text-black flex items-center gap-1">
-                        <Building className="w-3.5 h-3.5" />
-                        {lead?.name || `Lead ID: ${m.leadId.slice(0, 8)}...`}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-tx-muted">
+                      <span className="font-semibold text-tx flex items-center gap-1">
+                        <Building className="w-3.5 h-3.5 text-tx" />
+                        <span>{lead?.name || `Lead ID: ${m.leadId.slice(0, 8)}...`}</span>
                       </span>
 
                       {lead?.city && (
                         <span>• 📍 {lead.city}, {lead.country}</span>
                       )}
 
-                      <span className="flex items-center gap-1 mono text-black">
-                        <Clock className="w-3 h-3 text-black" />
-                        {new Date(m.startTime).toLocaleString(undefined, {
-                          dateStyle: 'medium',
-                          timeStyle: 'short',
-                        })}
+                      <span className="flex items-center gap-1 font-mono text-tx">
+                        <Clock className="w-3 h-3 text-tx" />
+                        <span>
+                          {new Date(m.startTime).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </span>
                       </span>
                     </div>
 
@@ -292,7 +311,7 @@ export const MeetingsPage: React.FC = () => {
                       <div className="flex items-center gap-2 pt-1">
                         <a
                           href={`tel:${phone}`}
-                          className="btn-ghost text-[11px] py-1 px-2.5 flex items-center gap-1 mono"
+                          className="font-mono text-[11px] text-tx-muted hover:text-tx flex items-center gap-1"
                         >
                           <Phone className="w-2.5 h-2.5" />
                           <span>{phone}</span>
@@ -302,10 +321,11 @@ export const MeetingsPage: React.FC = () => {
                             href={waLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="pill-luxury on text-[11px] flex items-center gap-1"
                           >
-                            <MessageCircle className="w-2.5 h-2.5" />
-                            <span>WhatsApp</span>
+                            <Pill active className="text-[10px] flex items-center gap-1">
+                              <MessageCircle className="w-2.5 h-2.5" />
+                              <span>WhatsApp</span>
+                            </Pill>
                           </a>
                         )}
                         {lead?.website && (
@@ -313,7 +333,7 @@ export const MeetingsPage: React.FC = () => {
                             href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#737373] hover:text-black flex items-center gap-1 text-[11px]"
+                            className="text-tx-subtle hover:text-tx flex items-center gap-1 text-[11px]"
                           >
                             <Globe className="w-2.5 h-2.5" />
                             <span>Website</span>
@@ -323,7 +343,7 @@ export const MeetingsPage: React.FC = () => {
                     )}
 
                     {m.notes && (
-                      <p className="text-xs text-[#525252] bg-white p-2.5 rounded-xl border border-[#E5E5E5]">
+                      <p className="text-xs text-tx-muted bg-surface-2 p-2.5 rounded-xl border border-border">
                         📝 {m.notes}
                       </p>
                     )}
@@ -335,31 +355,38 @@ export const MeetingsPage: React.FC = () => {
                         href={m.meetLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-solid text-xs flex items-center gap-1.5 py-2 px-3.5"
                       >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Join Google Meet</span>
-                        <ExternalLink className="w-3 h-3" />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                        >
+                          <Video className="w-3.5 h-3.5 mr-1.5" />
+                          <span>Join Google Meet</span>
+                          <ExternalLink className="w-3 h-3 ml-1.5" />
+                        </Button>
                       </a>
                     )}
 
                     {m.status === 'scheduled' && (
                       <>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleStatusChange(m.id, 'completed')}
-                          className="btn-ghost text-xs py-2 px-3 flex items-center gap-1"
                           title="Mark as Completed"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                           <span>Done</span>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleStatusChange(m.id, 'cancelled')}
-                          className="btn-ghost p-2 text-[#737373] hover:text-rose-600"
+                          className="p-2"
                           title="Cancel Call"
                         >
                           <XCircle className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
@@ -368,116 +395,93 @@ export const MeetingsPage: React.FC = () => {
             })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Schedule Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-[28px] max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-[#E5E5E5] pb-3">
-              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
-                <Video className="w-5 h-5 text-black" />
-                Schedule Strategy Meeting
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-[#737373] hover:text-black">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Schedule Strategy Meeting"
+      >
+        {error && (
+          <Card className="p-3 mb-4 text-xs text-tx">
+            {error}
+          </Card>
+        )}
 
-            {error && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                {error}
-              </div>
+        <form onSubmit={handleSchedule} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-tx-muted mb-1.5">
+              Select Business Client *
+            </label>
+            {availableLeads.length > 0 ? (
+              <select
+                value={selectedLeadId}
+                onChange={(e) => setSelectedLeadId(e.target.value)}
+                className="input-luxury text-xs cursor-pointer font-medium"
+                required
+              >
+                {availableLeads.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} — {l.city}, {l.country}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Enter Lead ID"
+                value={selectedLeadId}
+                onChange={(e) => setSelectedLeadId(e.target.value)}
+                className="input-luxury text-xs font-mono"
+                required
+              />
             )}
-
-            <form onSubmit={handleSchedule} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Select Business Client *
-                </label>
-                {availableLeads.length > 0 ? (
-                  <select
-                    value={selectedLeadId}
-                    onChange={(e) => setSelectedLeadId(e.target.value)}
-                    className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2.5 text-xs text-black focus:outline-none focus:border-black font-medium"
-                    required
-                  >
-                    {availableLeads.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.name} — {l.city}, {l.country}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="Enter Lead ID"
-                    value={selectedLeadId}
-                    onChange={(e) => setSelectedLeadId(e.target.value)}
-                    className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono focus:outline-none focus:border-black"
-                    required
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Meeting Topic / Headline
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black focus:outline-none focus:border-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Date &amp; Time *
-                </label>
-                <input
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono focus:outline-none focus:border-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Auto-Generated Google Meet Link
-                </label>
-                <input
-                  type="text"
-                  value={customMeetLink}
-                  onChange={(e) => setCustomMeetLink(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono focus:outline-none focus:border-black"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#E5E5E5]">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={scheduling}
-                  className="btn-solid text-xs disabled:opacity-50"
-                >
-                  {scheduling ? 'Scheduling...' : 'Confirm Call'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          <Input
+            label="Meeting Topic / Headline"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+
+          <Input
+            type="datetime-local"
+            label="Date & Time *"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="font-mono text-xs"
+            required
+          />
+
+          <Input
+            label="Auto-Generated Google Meet Link"
+            value={customMeetLink}
+            onChange={(e) => setCustomMeetLink(e.target.value)}
+            className="font-mono text-xs"
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={scheduling}
+            >
+              Confirm Call
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

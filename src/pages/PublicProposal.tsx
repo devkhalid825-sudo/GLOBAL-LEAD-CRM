@@ -9,8 +9,8 @@ import {
   ShieldCheck,
   Building,
   RefreshCw,
-  Send,
 } from 'lucide-react';
+import { Card, Button, Pill, Textarea } from '../components/ui/index.js';
 
 interface ProposalItem {
   item: string;
@@ -100,8 +100,8 @@ export const PublicProposalPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400 mb-3" />
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 text-tx-muted">
+        <RefreshCw className="w-8 h-8 animate-spin text-tx mb-3" />
         <p className="text-sm font-medium">Loading commercial proposal...</p>
       </div>
     );
@@ -109,12 +109,12 @@ export const PublicProposalPage: React.FC = () => {
 
   if (error || !proposal) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-surface-2 border border-border text-tx flex items-center justify-center mb-4">
           <XCircle className="w-8 h-8" />
         </div>
-        <h1 className="text-xl font-bold text-white mb-2">Proposal Unavailable</h1>
-        <p className="text-slate-400 text-sm max-w-sm">
+        <h1 className="font-serif text-xl font-bold text-tx mb-2">Proposal Unavailable</h1>
+        <p className="text-tx-muted text-sm max-w-sm">
           {error || 'This proposal link may be invalid or has expired.'}
         </p>
       </div>
@@ -125,33 +125,33 @@ export const PublicProposalPage: React.FC = () => {
   const isRejected = proposal.status === 'rejected';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-canvas text-tx py-12 px-4 sm:px-6 lg:px-8 selection:bg-tx selection:text-canvas">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Top Header Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
+        <Card className="p-8 shadow-card relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
             <div>
-              <span className="text-xs uppercase font-mono font-bold text-emerald-400 tracking-wider">
+              <span className="text-xs uppercase font-mono font-bold text-tx-subtle tracking-wider">
                 Official Business Proposal
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-white mt-1">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-tx mt-1">
                 {proposal.title}
               </h1>
             </div>
 
             <div>
               {isAccepted ? (
-                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Approved & Signed
-                </span>
+                <Pill active className="text-xs font-semibold flex items-center gap-1.5 py-1 px-3">
+                  <CheckCircle2 className="w-4 h-4" /> Approved &amp; Signed
+                </Pill>
               ) : isRejected ? (
-                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1.5">
+                <Pill className="text-xs font-semibold flex items-center gap-1.5 py-1 px-3">
                   <XCircle className="w-4 h-4" /> Declined
-                </span>
+                </Pill>
               ) : (
-                <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40 flex items-center gap-1.5">
+                <Pill className="text-xs font-semibold flex items-center gap-1.5 py-1 px-3">
                   <Clock className="w-4 h-4" /> Pending Client Decision
-                </span>
+                </Pill>
               )}
             </div>
           </div>
@@ -159,25 +159,25 @@ export const PublicProposalPage: React.FC = () => {
           {/* Client & Date Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 text-sm">
             <div>
-              <span className="text-xs uppercase font-semibold text-slate-500 block">
+              <span className="text-xs uppercase font-semibold text-tx-muted block">
                 Prepared For
               </span>
-              <div className="font-bold text-white text-base mt-0.5 flex items-center gap-1.5">
-                <Building className="w-4 h-4 text-emerald-400" />
-                {proposal.lead?.name || 'Valued Client'}
+              <div className="font-serif font-bold text-tx text-base mt-0.5 flex items-center gap-1.5">
+                <Building className="w-4 h-4 text-tx" />
+                <span>{proposal.lead?.name || 'Valued Client'}</span>
               </div>
               {proposal.lead?.city && (
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="text-xs text-tx-muted mt-0.5 font-sans">
                   {proposal.lead.city}, {proposal.lead.country}
                 </div>
               )}
             </div>
 
             <div className="sm:text-right">
-              <span className="text-xs uppercase font-semibold text-slate-500 block">
+              <span className="text-xs uppercase font-semibold text-tx-muted block">
                 Proposal Date
               </span>
-              <div className="font-mono text-slate-300 mt-0.5">
+              <div className="font-mono text-tx-subtle mt-0.5 text-xs">
                 {new Date(proposal.createdAt).toLocaleDateString(undefined, {
                   year: 'numeric',
                   month: 'long',
@@ -186,45 +186,45 @@ export const PublicProposalPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Scope and Deliverables Table */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-400" />
-            Deliverables & Investment Schedule
+        <Card className="p-8 shadow-card space-y-6">
+          <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+            <FileText className="w-5 h-5 text-tx" />
+            <span>Deliverables &amp; Investment Schedule</span>
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Service Description</th>
-                  <th className="py-3 px-4 text-center">Qty</th>
-                  <th className="py-3 px-4 text-right">Rate</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
+            <table className="w-full text-left text-xs text-tx border-collapse">
+              <thead>
+                <tr className="border-b border-border text-tx-subtle text-[11px] bg-surface-2">
+                  <th className="py-3 px-4 font-medium">Service Description</th>
+                  <th className="py-3 px-4 text-center font-medium">Qty</th>
+                  <th className="py-3 px-4 text-right font-medium">Rate</th>
+                  <th className="py-3 px-4 text-right font-medium">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80">
+              <tbody className="divide-y divide-border font-sans">
                 {proposal.items.map((it, idx) => (
-                  <tr key={idx} className="hover:bg-slate-800/30">
-                    <td className="py-3.5 px-4 font-medium text-slate-200">{it.item}</td>
-                    <td className="py-3.5 px-4 text-center font-mono text-slate-400">{it.qty}</td>
-                    <td className="py-3.5 px-4 text-right font-mono text-slate-400">
+                  <tr key={idx} className="hover:bg-row-hover transition">
+                    <td className="py-3.5 px-4 font-medium text-tx">{it.item}</td>
+                    <td className="py-3.5 px-4 text-center font-mono text-tx-muted">{it.qty}</td>
+                    <td className="py-3.5 px-4 text-right font-mono text-tx-muted">
                       {proposal.currency} {it.rate.toLocaleString()}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
+                    <td className="py-3.5 px-4 text-right font-mono font-bold text-tx">
                       {proposal.currency} {(it.qty * it.rate).toLocaleString()}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-slate-800 text-base font-bold text-white">
-                  <td colSpan={3} className="py-4 px-4 text-right uppercase tracking-wider text-xs text-slate-400">
+                <tr className="border-t-2 border-border text-base font-bold text-tx">
+                  <td colSpan={3} className="py-4 px-4 text-right uppercase tracking-wider text-xs text-tx-muted">
                     Total Investment:
                   </td>
-                  <td className="py-4 px-4 text-right text-xl font-mono text-emerald-400">
+                  <td className="py-4 px-4 text-right text-xl font-mono text-tx font-bold">
                     {proposal.currency} {proposal.totalAmount.toLocaleString()}
                   </td>
                 </tr>
@@ -234,63 +234,64 @@ export const PublicProposalPage: React.FC = () => {
 
           {/* Scope Notes */}
           {proposal.notes && (
-            <div className="mt-6 pt-6 border-t border-slate-800">
-              <h3 className="text-xs uppercase font-semibold text-slate-400 mb-2">
-                Scope & Agreement Terms
+            <div className="mt-6 pt-6 border-t border-border">
+              <h3 className="text-xs uppercase font-semibold text-tx-muted mb-2">
+                Scope &amp; Agreement Terms
               </h3>
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-wrap">
+              <div className="bg-surface-2 border border-border rounded-2xl p-4 text-xs text-tx-muted leading-relaxed font-sans whitespace-pre-wrap">
                 {proposal.notes}
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Client Decision Section */}
         {!isAccepted && !isRejected && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              Sign & Approve Proposal
+          <Card className="p-8 shadow-card space-y-4">
+            <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-tx" />
+              <span>Sign &amp; Approve Proposal</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-tx-muted">
               By accepting this proposal, you authorize our team to initiate onboarding and deliver the services outlined above.
             </p>
 
-            <textarea
+            <Textarea
               rows={2}
               value={clientNotes}
-              onChange={(e) => setClientNotes(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setClientNotes(e.target.value)}
               placeholder="Optional notes, preferred start date, or billing remarks..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-sans"
             />
 
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleAction('reject')}
                 disabled={submittingAction}
-                className="px-5 py-2.5 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition"
               >
                 Decline Proposal
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={() => handleAction('accept')}
-                disabled={submittingAction}
-                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2"
+                loading={submittingAction}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                {submittingAction ? 'Processing...' : 'Approve & Accept Proposal'}
-              </button>
+                <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                <span>Approve &amp; Accept Proposal</span>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
         {actionSuccess && (
-          <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-3">
+          <Card className="p-5 text-tx text-sm flex items-center gap-3">
             <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
             <span>{actionSuccess}</span>
-          </div>
+          </Card>
         )}
       </div>
     </div>
