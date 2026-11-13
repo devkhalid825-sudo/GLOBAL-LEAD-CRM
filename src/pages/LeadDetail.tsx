@@ -14,7 +14,6 @@ import {
   Sparkles,
   MapPin,
   Globe,
-  CheckCircle2,
   Briefcase,
   ExternalLink,
   Eye,
@@ -22,9 +21,11 @@ import {
   Video,
   RefreshCw,
   Copy,
+  CheckCircle2,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
 import { VoiceNoteRecorder, VoiceNotePlayer } from '../components/timeline/VoiceNoteRecorder.js';
+import { Card, Button, Input, Select, Textarea, Pill, Modal, Toast, Skeleton, EmptyState } from '../components/ui/index.js';
 
 export const LeadDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,14 +56,12 @@ export const LeadDetailPage: React.FC = () => {
 
   // Website email scraper state
   const [isScrapingEmail, setIsScrapingEmail] = useState(false);
-  const [scrapeMessage, setScrapeMessage] = useState<string | null>(null);
 
   // AI Needs Analysis state
   const [aiAudit, setAiAudit] = useState<any | null>(null);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [copiedPitch, setCopiedPitch] = useState(false);
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
-  const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
   const [showWebPreview, setShowWebPreview] = useState(false);
 
   // Ad Preview & Strategy Meeting states
@@ -73,7 +72,7 @@ export const LeadDetailPage: React.FC = () => {
   const [meetingMeetLink, setMeetingMeetLink] = useState('');
   const [meetingNotes, setMeetingNotes] = useState('');
   const [schedulingMeeting, setSchedulingMeeting] = useState(false);
-  const [meetingNotice, setMeetingNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [copiedMeetLink, setCopiedMeetLink] = useState(false);
 
   // Speech-to-Text (Voice Typing) state
@@ -85,14 +84,12 @@ export const LeadDetailPage: React.FC = () => {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Speech Recognition is not supported by your browser. Please use Google Chrome or Microsoft Edge.');
+      alert('Speech Recognition is not supported by your browser. Please use Chrome or Edge.');
       return;
     }
 
     if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      if (recognitionRef.current) recognitionRef.current.stop();
       setIsListening(false);
       return;
     }
@@ -103,10 +100,7 @@ export const LeadDetailPage: React.FC = () => {
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
+      recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
         let transcript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -116,14 +110,8 @@ export const LeadDetailPage: React.FC = () => {
           setNewNote((prev) => (prev ? `${prev} ${transcript}` : transcript));
         }
       };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
 
       recognitionRef.current = recognition;
       recognition.start();
@@ -138,8 +126,9 @@ export const LeadDetailPage: React.FC = () => {
     try {
       const res = await api.post<any>(`/leads/${id}/ai-audit`, {});
       setAiAudit(res);
+      setNotice('AI commercial audit generated successfully');
     } catch (err: any) {
-      alert(`AI Audit error: ${err.message || 'Failed'}`);
+      setNotice(`AI audit failed: ${err.message || 'Error'}`);
     } finally {
       setLoadingAudit(false);
     }
@@ -164,7 +153,6 @@ export const LeadDetailPage: React.FC = () => {
     e.preventDefault();
     if (!id || !meetingDate) return;
     setSchedulingMeeting(true);
-    setMeetingNotice(null);
 
     try {
       await api.post('/meetings', {
@@ -176,10 +164,10 @@ export const LeadDetailPage: React.FC = () => {
       });
 
       setShowScheduleModal(false);
-      setMeetingNotice(`Scheduled Google Meet strategy call with ${lead?.name || 'client'}!`);
+      setNotice(`Strategy call scheduled with ${lead?.name || 'client'}`);
       fetchLeadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to schedule meeting');
+      setNotice(`Scheduling failed: ${err.message}`);
     } finally {
       setSchedulingMeeting(false);
     }
@@ -202,9 +190,7 @@ export const LeadDetailPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      fetchLeadData();
-    }
+    if (id) fetchLeadData();
   }, [id]);
 
   const handleAddNote = async (e: React.FormEvent) => {
@@ -219,8 +205,9 @@ export const LeadDetailPage: React.FC = () => {
       });
       setNewNote('');
       fetchLeadData();
-    } catch (err) {
-      console.error(err);
+      setNotice('Internal note posted');
+    } catch (err: any) {
+      setNotice(`Failed to post note: ${err.message}`);
     } finally {
       setSubmittingNote(false);
     }
@@ -241,8 +228,9 @@ export const LeadDetailPage: React.FC = () => {
       setShowCallModal(false);
       setCallNotes('');
       fetchLeadData();
-    } catch (err) {
-      console.error(err);
+      setNotice('Call outcome logged');
+    } catch (err: any) {
+      setNotice(`Failed to log call: ${err.message}`);
     } finally {
       setSubmittingCall(false);
     }
@@ -269,6 +257,7 @@ export const LeadDetailPage: React.FC = () => {
       setEmailSubject('');
       setEmailBody('');
       fetchLeadData();
+      setNotice('Outreach email dispatched');
     } catch (err: any) {
       setEmailError(err.message || 'Failed to dispatch email');
     } finally {
@@ -279,17 +268,16 @@ export const LeadDetailPage: React.FC = () => {
   const handleScrapeEmail = async () => {
     if (!id) return;
     setIsScrapingEmail(true);
-    setScrapeMessage(null);
     try {
       const res = await api.post<any>(`/leads/${id}/scrape-email`, {});
       if (res.found > 0) {
-        setScrapeMessage(`Discovered ${res.found} email(s): ${res.emails.join(', ')}`);
+        setNotice(`Discovered ${res.found} email(s): ${res.emails.join(', ')}`);
         fetchLeadData();
       } else {
-        setScrapeMessage('No public email found on the website or /contact page.');
+        setNotice('No public email found on the website or /contact page.');
       }
     } catch (err: any) {
-      setScrapeMessage(`Extraction failed: ${err.message || 'Unknown error'}`);
+      setNotice(`Extraction failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsScrapingEmail(false);
     }
@@ -297,23 +285,24 @@ export const LeadDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="py-24 text-center text-[#737373] text-xs">
-        Loading lead dossier...
+      <div className="py-16 space-y-4 max-w-6xl mx-auto">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="text-center py-20 card-luxury p-8 max-w-md mx-auto">
-        <h2 className="serif text-xl font-bold text-black">Lead Not Found</h2>
-        <button
-          onClick={() => navigate('/leads')}
-          className="mt-4 btn-solid text-xs"
-        >
-          Return to Leads Directory
-        </button>
-      </div>
+      <EmptyState
+        title="Lead dossier not found"
+        description="The requested business could not be loaded."
+        action={{
+          label: 'Return to leads database',
+          onClick: () => navigate('/leads'),
+        }}
+      />
     );
   }
 
@@ -329,262 +318,343 @@ export const LeadDetailPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header matching Figma Screen 4 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E5E5E5]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/leads')}
             className="btn-ghost p-2"
             title="Back to leads"
+            aria-label="Back to leads directory"
           >
-            <ArrowLeft className="w-4 h-4 text-black" />
+            <ArrowLeft className="w-4 h-4 text-tx" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="serif text-2xl sm:text-3xl font-bold text-black tracking-tight">{lead.name}</h1>
-              <span className="pill-luxury text-[11px]">{lead.categoryName?.split('(')[0]?.trim() || 'Business'}</span>
+              <h1 className="serif text-2xl sm:text-[28px] font-bold text-tx tracking-tightest">
+                {lead.name}
+              </h1>
+              <Pill className="text-[11px] pointer-events-none">
+                {lead.categoryName?.split('(')[0]?.trim() || 'Business'}
+              </Pill>
             </div>
-            <p className="text-xs text-[#525252] mt-1 font-sans">
-              {lead.websiteNorm || lead.website || 'No website'} · <span className="mono text-black font-semibold">$3,800 deal value</span> · 📍 {lead.city}, {lead.country}
+            <p className="text-xs text-tx-muted mt-1 font-sans">
+              {lead.websiteNorm || lead.website || 'No website'} · <span className="mono text-tx font-semibold">$3,800 deal value</span> · 📍 {lead.city}, {lead.country}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button
+          <Button
+            variant="primary"
             onClick={() => setShowAdPreviewModal(true)}
-            className="btn-solid text-xs flex items-center gap-1.5"
+            size="sm"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5 mr-1.5" />
             <span>Inspect ad and pitch</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
             onClick={openScheduleMeetingModal}
-            className="btn-ghost text-xs flex items-center gap-1.5"
+            size="sm"
           >
-            <Video className="w-3.5 h-3.5" />
-            <span>Schedule Call</span>
-          </button>
+            <Video className="w-3.5 h-3.5 mr-1.5" />
+            <span>Schedule call</span>
+          </Button>
         </div>
       </div>
 
-      {meetingNotice && (
-        <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl text-black text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-black flex-shrink-0" />
-            <span>{meetingNotice}</span>
-          </div>
-          <button onClick={() => setMeetingNotice(null)} className="text-[#737373] hover:text-black">✕</button>
-        </div>
-      )}
-
       {/* Main Grid: Business Intel (Span 4) & Timeline (Span 8) matching Figma */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Business Intel Card (Span 4) */}
-        <div className="lg:col-span-4 card-luxury p-6 space-y-6">
-          <div>
-            <h2 className="serif text-xl font-semibold text-black mb-3">Business intel</h2>
-            <div className="divide-y divide-[#E5E5E5] text-xs">
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Phone</span>
-                <span className="mono text-black">{phone || '—'}</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Email</span>
-                <span className="text-black font-medium">{leadEmail || 'None detected'}</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Location</span>
-                <span className="text-black font-medium">{lead.city}, {lead.country}</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Rating</span>
-                <span className="mono text-black font-semibold">{lead.rating ? `${lead.rating} (312)` : '4.7 (312)'}</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Source</span>
-                <span className="text-black font-medium">Serper.dev, 12 Nov</span>
+        {/* Left Column (Span 4): Business Intel and Contacts */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="space-y-5">
+            <div>
+              <h2 className="serif text-xl font-semibold text-tx mb-3">Business intel</h2>
+              <div className="divide-y divide-border text-xs">
+                <div className="py-2.5 flex items-center justify-between">
+                  <span className="text-tx-muted">Phone</span>
+                  <span className="mono text-tx font-medium">{phone || '—'}</span>
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <span className="text-tx-muted">Email</span>
+                  <span className="text-tx font-medium truncate max-w-[180px]">{leadEmail || 'None detected'}</span>
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <span className="text-tx-muted">Location</span>
+                  <span className="text-tx font-medium">{lead.city}, {lead.country}</span>
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <span className="text-tx-muted">Rating</span>
+                  <span className="mono text-tx font-semibold">{lead.rating ? `${lead.rating} (312)` : '4.7 (312)'}</span>
+                </div>
+                <div className="py-2.5 flex items-center justify-between">
+                  <span className="text-tx-muted">Source</span>
+                  <span className="text-tx font-medium">Serper.dev, verified</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <h3 className="serif text-base font-semibold text-black mb-2">Website tech stack</h3>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="pill-luxury">WordPress</span>
-              <span className="pill-luxury on">Meta Pixel</span>
-              <span className="pill-luxury">Google Tag</span>
-              <span className="pill-luxury">Next.js</span>
+            <div>
+              <h3 className="serif text-sm font-semibold text-tx mb-2">Website tech stack</h3>
+              <div className="flex flex-wrap gap-1.5">
+                <Pill className="text-[11px] pointer-events-none">WordPress</Pill>
+                <Pill active className="text-[11px] pointer-events-none">Meta Pixel</Pill>
+                <Pill className="text-[11px] pointer-events-none">Google Tag</Pill>
+                <Pill className="text-[11px] pointer-events-none">Next.js</Pill>
+              </div>
             </div>
-          </div>
 
-          <div className="pt-2 border-t border-[#E5E5E5] space-y-2">
-            <h3 className="serif text-base font-semibold text-black mb-2">Direct Outreach Actions</h3>
-            <div className="flex flex-wrap gap-2">
-              {phone && (
-                <a
-                  href={`tel:${phone}`}
-                  className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 mono"
+            <div className="pt-2 border-t border-border space-y-2">
+              <h3 className="serif text-sm font-semibold text-tx mb-2">Direct outreach</h3>
+              <div className="flex flex-wrap gap-2">
+                {phone && (
+                  <a
+                    href={`tel:${phone}`}
+                    className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 mono"
+                  >
+                    <Phone className="w-3 h-3" />
+                    <span>Call</span>
+                  </a>
+                )}
+                {waLink && (
+                  <a
+                    href={waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      api.post(`/leads/${id}/timeline`, {
+                        type: 'whatsapp',
+                        payload: { message: `Initiated WhatsApp outreach with ${phone}` },
+                      }).catch(() => {});
+                    }}
+                    className="btn-solid text-xs py-1.5 px-3 flex items-center gap-1"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    <span>WhatsApp</span>
+                  </a>
+                )}
+                <button
+                  onClick={() => {
+                    setEmailTo(leadEmail || '');
+                    setEmailSubject(`Inquiry for ${lead.name}`);
+                    setShowEmailModal(true);
+                  }}
+                  className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1"
                 >
-                  <Phone className="w-3 h-3" />
-                  <span>Call</span>
-                </a>
-              )}
-              {waLink && (
+                  <Mail className="w-3 h-3" />
+                  <span>Email</span>
+                </button>
+                <button
+                  onClick={fetchAiAudit}
+                  disabled={loadingAudit}
+                  className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>AI audit</span>
+                </button>
+              </div>
+            </div>
+
+            {/* LinkedIn & Hiring Intent */}
+            <div className="pt-2 border-t border-border space-y-2">
+              <span className="text-[11px] text-tx-subtle uppercase tracking-wider block font-medium">
+                Research &amp; hiring intent
+              </span>
+              <div className="space-y-1.5">
                 <a
-                  href={waLink}
+                  href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(lead.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-solid text-xs py-1.5 px-3 flex items-center gap-1"
+                  className="w-full px-3 py-2 bg-surface-2 hover:border-tx-muted text-tx border border-border rounded-btn flex items-center justify-between text-xs transition"
                 >
-                  <MessageCircle className="w-3 h-3" />
-                  <span>WhatsApp</span>
+                  <span className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-tx-subtle" />
+                    <span>Company on LinkedIn</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-tx-subtle" />
                 </a>
-              )}
-              <button
-                onClick={() => {
-                  setEmailTo(leadEmail || '');
-                  setEmailSubject(`Inquiry for ${lead.name}`);
-                  setShowEmailModal(true);
-                }}
-                className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1"
-              >
-                <Mail className="w-3 h-3" />
-                <span>Email</span>
-              </button>
-              <button
-                onClick={fetchAiAudit}
-                disabled={loadingAudit}
-                className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>AI Audit</span>
-              </button>
+
+                <a
+                  href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(lead.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-3 py-2 bg-surface-2 hover:border-tx-muted text-tx border border-border rounded-btn flex items-center justify-between text-xs transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <Briefcase className="w-3.5 h-3.5 text-tx-subtle" />
+                    <span>Active hiring jobs</span>
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-tx-subtle" />
+                </a>
+              </div>
             </div>
-          </div>
+          </Card>
+
+          {/* AI Audit Output Box */}
+          {aiAudit && (
+            <Card className="space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-tx" />
+                  <h3 className="serif text-sm font-semibold text-tx">AI commercial audit</h3>
+                </div>
+                <button onClick={() => setAiAudit(null)} className="text-tx-subtle hover:text-tx text-xs">✕</button>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <span className="text-tx-subtle block">Recommended pitch script:</span>
+                <p className="bg-surface-2 p-3 rounded-btn border border-border mono text-[11px] leading-relaxed text-tx">
+                  "{aiAudit.whatsappPitchScript || aiAudit.businessOpportunity}"
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(aiAudit.whatsappPitchScript || aiAudit.businessOpportunity);
+                    setCopiedPitch(true);
+                    setTimeout(() => setCopiedPitch(false), 2000);
+                  }}
+                  className="btn-ghost text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>{copiedPitch ? 'Copied' : 'Copy script'}</span>
+                </button>
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Timeline & Notes Card (Span 8) */}
-        <div className="lg:col-span-8 card-luxury p-6 space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
-            <h2 className="serif text-xl font-semibold text-black">Timeline &amp; Interactions</h2>
-            <button
-              onClick={openScheduleMeetingModal}
-              className="btn-ghost text-xs"
-            >
-              Create Google Meet
-            </button>
-          </div>
+        {/* Right Column (Span 8): Timeline Feed & Note Logger */}
+        <div className="lg:col-span-8 space-y-6">
+          <Card className="space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <h2 className="serif text-xl font-semibold text-tx">Timeline</h2>
+              <Button
+                variant="ghost"
+                onClick={openScheduleMeetingModal}
+                size="sm"
+              >
+                Create Google Meet
+              </Button>
+            </div>
 
-          {/* New Note & Voice Dictation */}
-          <div className="space-y-3">
+            {/* Note Input & Voice Dictation */}
             <form onSubmit={handleAddNote} className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#525252] font-medium">Record note</span>
+                <span className="text-xs text-tx-muted font-medium">Record note</span>
                 <button
                   type="button"
                   onClick={toggleSpeechRecognition}
-                  className={`pill-luxury text-[11px] flex items-center gap-1 ${isListening ? 'on' : ''}`}
+                  className={`pill-luxury text-[11px] flex items-center gap-1.5 ${isListening ? 'on' : ''}`}
                 >
                   <Mic className="w-3 h-3" />
-                  <span>{isListening ? 'Listening...' : 'Voice typing'}</span>
+                  <span>{isListening ? 'Listening…' : 'Voice typing'}</span>
                 </button>
               </div>
 
-              <textarea
+              <Textarea
                 rows={3}
                 required
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Type note or strategy note for this client..."
-                className="w-full bg-white border border-[#E5E5E5] rounded-xl p-3 text-xs text-black focus:outline-none focus:border-black font-sans"
+                placeholder="Leave an internal note or client pitch summary..."
               />
 
-              <div className="flex justify-end">
-                <button
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-[11px] text-tx-subtle">
+                  Permanently logged to this lead dossier
+                </span>
+                <Button
+                  variant="primary"
                   type="submit"
-                  disabled={submittingNote || !newNote.trim()}
-                  className="btn-solid text-xs flex items-center gap-1.5 disabled:opacity-50"
+                  loading={submittingNote}
+                  disabled={!newNote.trim()}
+                  size="sm"
                 >
-                  <Send className="w-3 h-3" />
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
                   <span>Post note</span>
-                </button>
+                </Button>
               </div>
             </form>
 
+            {/* Voice Memo Audio Recorder Primitive */}
             <VoiceNoteRecorder leadId={id!} onVoiceNoteCreated={fetchLeadData} />
-          </div>
 
-          {/* Timeline Feed matching Figma */}
-          <div className="space-y-4 pt-4 border-t border-[#E5E5E5]">
-            {timeline.length === 0 ? (
-              <div className="py-8 text-center text-[#737373] text-xs">
-                No timeline events yet. Post a note or record a voice note above.
-              </div>
-            ) : (
-              <div className="space-y-4 relative before:absolute before:inset-0 before:left-2 before:w-px before:bg-[#E5E5E5]">
-                {timeline.map((event) => {
-                  const isCall = event.type === 'call';
-                  const isVoice = event.type === 'voice_note';
-                  const isMeeting = event.type === 'meeting';
+            {/* Timeline Stream */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              {timeline.length === 0 ? (
+                <div className="py-8 text-center text-tx-subtle text-xs">
+                  No interactions recorded yet. Post a note or record a voice note above.
+                </div>
+              ) : (
+                <div className="space-y-4 relative before:absolute before:inset-0 before:left-2 before:w-px before:bg-border">
+                  {timeline.map((event) => {
+                    const isCall = event.type === 'call';
+                    const isVoice = event.type === 'voice_note';
+                    const isMeeting = event.type === 'meeting';
 
-                  return (
-                    <div key={event.id} className="relative flex items-start gap-3 pl-6">
-                      <div className="absolute left-1 top-1.5 w-2 h-2 rounded-full bg-black" />
-                      <div className="flex-1 bg-white border border-[#E5E5E5] rounded-xl p-3.5 shadow-sm text-xs space-y-1">
-                        <div className="flex items-center justify-between text-[#737373] text-[11px]">
-                          <span className="font-semibold text-black">
-                            {event.actorName || 'Team Member'} · {event.type.replace('_', ' ')}
-                          </span>
-                          <span className="mono">{new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    return (
+                      <div key={event.id} className="relative flex items-start gap-3 pl-6">
+                        <div className="absolute left-1 top-1.5 w-2 h-2 rounded-full bg-tx" />
+                        <div className="flex-1 bg-surface-2 border border-border rounded-btn p-3.5 text-xs space-y-1">
+                          <div className="flex items-center justify-between text-tx-subtle text-[11px]">
+                            <span className="font-semibold text-tx">
+                              {event.actorName || 'Team member'} · {event.type.replace('_', ' ')}
+                            </span>
+                            <span className="mono">
+                              {new Date(event.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          {isVoice ? (
+                            <div className="mt-1">
+                              <VoiceNotePlayer
+                                audioData={event.payload?.audioData}
+                                durationSec={event.payload?.durationSec}
+                                createdAt={event.createdAt}
+                              />
+                              {event.payload?.notes && (
+                                <p className="text-tx-muted mt-1 italic">{event.payload.notes}</p>
+                              )}
+                            </div>
+                          ) : isMeeting ? (
+                            <div className="space-y-1">
+                              <span className="pill-luxury on text-[10px]">
+                                Meeting: {event.payload?.title || 'Strategy session'}
+                              </span>
+                              {event.payload?.meetLink && (
+                                <a
+                                  href={event.payload.meetLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-tx font-semibold underline block mt-1 mono"
+                                >
+                                  {event.payload.meetLink}
+                                </a>
+                              )}
+                            </div>
+                          ) : isCall ? (
+                            <div className="space-y-1">
+                              <span className="pill-luxury text-[10px]">
+                                Call: {event.payload?.outcome || 'Connected'}
+                              </span>
+                              {event.payload?.notes && <p className="text-tx-muted">{event.payload.notes}</p>}
+                            </div>
+                          ) : (
+                            <p className="text-tx-muted whitespace-pre-wrap">{event.payload?.text}</p>
+                          )}
                         </div>
-
-                        {isVoice ? (
-                          <div className="mt-1">
-                            <VoiceNotePlayer
-                              audioData={event.payload?.audioData}
-                              durationSec={event.payload?.durationSec}
-                              createdAt={event.createdAt}
-                            />
-                            {event.payload?.notes && (
-                              <p className="text-[#525252] mt-1">{event.payload.notes}</p>
-                            )}
-                          </div>
-                        ) : isMeeting ? (
-                          <div className="space-y-1">
-                            <span className="pill-luxury on text-[10px]">
-                              Meeting: {event.payload?.title || 'Strategy Session'}
-                            </span>
-                            {event.payload?.meetLink && (
-                              <a
-                                href={event.payload.meetLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-black font-semibold underline block mt-1"
-                              >
-                                {event.payload.meetLink}
-                              </a>
-                            )}
-                          </div>
-                        ) : isCall ? (
-                          <div className="space-y-1">
-                            <span className="pill-luxury text-[10px]">
-                              Call: {event.payload?.outcome || 'Connected'}
-                            </span>
-                            {event.payload?.notes && <p className="text-[#525252]">{event.payload.notes}</p>}
-                          </div>
-                        ) : (
-                          <p className="text-[#525252] whitespace-pre-wrap">{event.payload?.text}</p>
-                        )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
+
+      {/* Floating Status Toast */}
+      <Toast message={notice} onClose={() => setNotice(null)} />
 
       {/* In-App Live Ad Inspector Modal */}
       {showAdPreviewModal && (
@@ -592,169 +662,173 @@ export const LeadDetailPage: React.FC = () => {
       )}
 
       {/* Schedule Call Modal */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-[28px] w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
-              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
-                <Video className="w-5 h-5 text-black" />
-                Schedule Strategy &amp; Pitch Call
-              </h3>
-              <button
-                onClick={() => setShowScheduleModal(false)}
-                className="text-[#737373] hover:text-black p-1"
-              >
-                ✕
-              </button>
-            </div>
+      <Modal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        title="Schedule strategy meeting"
+        subtitle="Generates Google Meet link instantly"
+      >
+        <form onSubmit={handleScheduleMeeting} className="space-y-4">
+          <Input
+            label="Meeting topic"
+            required
+            value={meetingTitle}
+            onChange={(e) => setMeetingTitle(e.target.value)}
+          />
 
-            <form onSubmit={handleScheduleMeeting} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Meeting Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={meetingTitle}
-                  onChange={(e) => setMeetingTitle(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black"
-                />
-              </div>
+          <Input
+            label="Date & time"
+            type="datetime-local"
+            required
+            value={meetingDate}
+            onChange={(e) => setMeetingDate(e.target.value)}
+            className="mono"
+          />
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Date &amp; Time
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={meetingDate}
-                  onChange={(e) => setMeetingDate(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono"
-                />
-              </div>
+          <Input
+            label="Google Meet URL (3-4-3 valid format)"
+            type="url"
+            value={meetingMeetLink}
+            onChange={(e) => setMeetingMeetLink(e.target.value)}
+            className="mono"
+          />
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Google Meet Room (3-4-3 valid link)
-                </label>
-                <input
-                  type="url"
-                  value={meetingMeetLink}
-                  onChange={(e) => setMeetingMeetLink(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono"
-                />
-              </div>
+          <Textarea
+            label="Agenda & notes"
+            rows={3}
+            value={meetingNotes}
+            onChange={(e) => setMeetingNotes(e.target.value)}
+            placeholder="Review digital presence, propose growth retainers..."
+          />
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Agenda / Notes
-                </label>
-                <textarea
-                  rows={3}
-                  value={meetingNotes}
-                  onChange={(e) => setMeetingNotes(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl p-3 text-xs text-black font-sans"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2 border-t border-[#E5E5E5]">
-                <button
-                  type="button"
-                  onClick={() => setShowScheduleModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={schedulingMeeting}
-                  className="btn-solid text-xs disabled:opacity-50"
-                >
-                  {schedulingMeeting ? 'Scheduling...' : 'Confirm Call'}
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowScheduleModal(false)}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={schedulingMeeting}
+              size="sm"
+            >
+              Confirm call
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
+
+      {/* Log Call Modal */}
+      <Modal
+        isOpen={showCallModal}
+        onClose={() => setShowCallModal(false)}
+        title="Log call outcome"
+      >
+        <form onSubmit={handleLogCall} className="space-y-4">
+          <Select
+            label="Call outcome"
+            value={callOutcome}
+            onChange={(e) => setCallOutcome(e.target.value)}
+          >
+            <option value="connected">Connected &amp; spoke with owner</option>
+            <option value="busy">Line busy</option>
+            <option value="wrong_number">Wrong number</option>
+            <option value="left_voicemail">Left voicemail</option>
+            <option value="callback_scheduled">Follow-up callback scheduled</option>
+          </Select>
+
+          <Input
+            label="Duration (seconds)"
+            type="number"
+            min={0}
+            value={callDuration}
+            onChange={(e) => setCallDuration(parseInt(e.target.value, 10) || 0)}
+          />
+
+          <Textarea
+            label="Call notes"
+            rows={3}
+            value={callNotes}
+            onChange={(e) => setCallNotes(e.target.value)}
+            placeholder="Discussed marketing retainers, agreed to send proposal..."
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowCallModal(false)}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submittingCall}
+              size="sm"
+            >
+              Save outcome
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Send Email Modal */}
-      {showEmailModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-[28px] w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
-              <Mail className="w-5 h-5 text-black" />
-              Send Outreach Email
-            </h3>
+      <Modal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        title="Send outreach email"
+      >
+        {emailError && <p className="text-xs text-tx-muted mb-2">{emailError}</p>}
+        <form onSubmit={handleSendLeadEmail} className="space-y-4">
+          <Input
+            label="Recipient email"
+            type="email"
+            required
+            value={emailTo}
+            onChange={(e) => setEmailTo(e.target.value)}
+          />
 
-            {emailError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                {emailError}
-              </div>
-            )}
+          <Input
+            label="Subject line"
+            required
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+          />
 
-            <form onSubmit={handleSendLeadEmail} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Recipient Email
-                </label>
-                <input
-                  type="email"
-                  value={emailTo}
-                  onChange={(e) => setEmailTo(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black"
-                  required
-                />
-              </div>
+          <Textarea
+            label="Message body"
+            rows={5}
+            required
+            value={emailBody}
+            onChange={(e) => setEmailBody(e.target.value)}
+          />
 
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Subject Line
-                </label>
-                <input
-                  type="text"
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Message Body
-                </label>
-                <textarea
-                  rows={4}
-                  value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl p-3 text-xs text-black font-sans"
-                  required
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2 border-t border-[#E5E5E5]">
-                <button
-                  type="button"
-                  onClick={() => setShowEmailModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingEmail}
-                  className="btn-solid text-xs disabled:opacity-50"
-                >
-                  {submittingEmail ? 'Sending...' : 'Send Email'}
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowEmailModal(false)}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submittingEmail}
+              size="sm"
+            >
+              Send email
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };
