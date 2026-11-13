@@ -1,5 +1,6 @@
 import React from 'react';
 import { Compass, Users, Inbox, MessageSquare, Calendar, FileText, Clock, BarChart3 } from 'lucide-react';
+import { Card, Pill } from '../components/ui/index.js';
 
 interface PlaceholderProps {
   title: string;
@@ -9,16 +10,18 @@ interface PlaceholderProps {
 }
 
 const PlaceholderPage: React.FC<PlaceholderProps> = ({ title, phase, icon: Icon, description }) => (
-  <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center max-w-2xl mx-auto my-12">
-    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+  <Card className="p-12 text-center max-w-2xl mx-auto my-12 space-y-4">
+    <div className="w-16 h-16 rounded-2xl bg-surface-2 border border-border text-tx flex items-center justify-center mx-auto">
       <Icon className="w-8 h-8" />
     </div>
-    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">
-      {phase}
-    </span>
-    <h2 className="text-2xl font-bold text-white mt-4">{title}</h2>
-    <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">{description}</p>
-  </div>
+    <div>
+      <Pill active className="text-xs font-mono">
+        {phase}
+      </Pill>
+    </div>
+    <h2 className="font-serif text-2xl font-bold text-tx">{title}</h2>
+    <p className="text-tx-muted text-xs max-w-md mx-auto">{description}</p>
+  </Card>
 );
 
 export const LeadFinderPage = () => (
