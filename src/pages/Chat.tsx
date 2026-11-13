@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { api, getAccessToken } from '../api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { MessageSquare, Send, Users, Hash, Plus, Circle, ChevronLeft } from 'lucide-react';
+import { MessageSquare, Send, Hash, Plus, ChevronLeft } from 'lucide-react';
+import { Card, Button, Input, Modal, Pill } from '../components/ui/index.js';
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
@@ -12,11 +13,13 @@ export const ChatPage: React.FC = () => {
   const [newMsg, setNewMsg] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // New Channel Modal
   const [showNewModal, setShowNewModal] = useState(false);
   const [channelName, setChannelName] = useState('');
+  const [creatingChannel, setCreatingChannel] = useState(false);
 
   const fetchConversations = async () => {
     try {
@@ -51,6 +54,14 @@ export const ChatPage: React.FC = () => {
     const chatSocket = io(`${socketBase}/chat`, {
       auth: { token },
       transports: ['websocket', 'polling'],
+    });
+
+    chatSocket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    chatSocket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
     chatSocket.on('new_message', (msg: any) => {
@@ -96,6 +107,7 @@ export const ChatPage: React.FC = () => {
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!channelName.trim()) return;
+    setCreatingChannel(true);
 
     try {
       const conv = await api.post<any>('/conversations', {
@@ -108,25 +120,27 @@ export const ChatPage: React.FC = () => {
       setActiveConv(conv);
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setCreatingChannel(false);
     }
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+    <Card className="flex h-[calc(100vh-8rem)] overflow-hidden p-0">
       {/* Channels & Direct Conversations Sidebar */}
       <div
-        className={`w-full md:w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0 ${
+        className={`w-full md:w-64 bg-surface-1 border-r border-border flex flex-col flex-shrink-0 ${
           mobileShowChat ? 'hidden md:flex' : 'flex'
         }`}
       >
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-emerald-400" />
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h2 className="font-serif text-sm font-bold text-tx flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-tx" />
             <span>Team Channels</span>
           </h2>
           <button
             onClick={() => setShowNewModal(true)}
-            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+            className="p-1 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
             title="Create Channel"
           >
             <Plus className="w-4 h-4" />
@@ -135,8 +149,8 @@ export const ChatPage: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {conversations.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-500">
-              No conversations yet.
+            <div className="text-center py-8 text-xs text-tx-subtle">
+              No channels yet.
             </div>
           ) : (
             conversations.map((conv) => {
@@ -148,10 +162,10 @@ export const ChatPage: React.FC = () => {
                     setActiveConv(conv);
                     setMobileShowChat(true);
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center gap-2.5 transition ${
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center gap-2.5 transition ${
                     isSelected
-                      ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20'
-                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                      ? 'bg-surface-2 text-tx font-semibold border border-border'
+                      : 'text-tx-muted hover:bg-surface-2 hover:text-tx'
                   }`}
                 >
                   <Hash className="w-3.5 h-3.5 flex-shrink-0" />
@@ -165,36 +179,46 @@ export const ChatPage: React.FC = () => {
 
       {/* Messages Stream & Chat Window */}
       <div
-        className={`flex-1 flex flex-col min-w-0 bg-slate-900/40 ${
+        className={`flex-1 flex flex-col min-w-0 bg-canvas ${
           mobileShowChat ? 'flex' : 'hidden md:flex'
         }`}
       >
         {/* Chat Header */}
-        <div className="h-14 px-4 sm:px-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+        <div className="h-14 px-4 sm:px-6 border-b border-border flex items-center justify-between bg-surface-1">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileShowChat(false)}
-              className="md:hidden p-1.5 -ml-1 mr-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              className="md:hidden p-1.5 -ml-1 mr-1 text-tx-muted hover:text-tx rounded-lg hover:bg-surface-2 transition"
               title="Back to Channels"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <Hash className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-white text-sm truncate max-w-[180px] sm:max-w-none">
+            <Hash className="w-4 h-4 text-tx" />
+            <span className="font-serif font-bold text-tx text-sm truncate max-w-[180px] sm:max-w-none">
               {activeConv?.name || 'General Outreach'}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-emerald-400">
-            <Circle className="w-2.5 h-2.5 fill-current" />
-            <span className="text-slate-400 hidden sm:inline">Real-time Connected</span>
+
+          <div className="flex items-center gap-2 text-xs">
+            {isConnected ? (
+              <span className="flex items-center gap-1.5 text-tx font-mono text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-tx inline-block animate-pulse" />
+                <span className="hidden sm:inline">Online</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-tx-subtle font-mono text-[11px]">
+                <span className="w-2 h-2 rounded-full border border-tx-subtle inline-block" />
+                <span className="hidden sm:inline">Disconnected</span>
+              </span>
+            )}
           </div>
         </div>
 
         {/* Message Bubble Feed */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 font-sans">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.length === 0 ? (
-            <div className="text-center py-16 text-xs text-slate-500">
-              No messages yet in this channel. Send the first message below!
+            <div className="text-center py-16 text-xs text-tx-subtle">
+              No messages yet in this channel. Send the first message below.
             </div>
           ) : (
             messages.map((m) => {
@@ -204,15 +228,17 @@ export const ChatPage: React.FC = () => {
                   key={m.id}
                   className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                 >
-                  <div className="flex items-center gap-2 mb-1 text-[11px] text-slate-400">
-                    <span className="font-bold text-slate-300">{m.senderName}</span>
-                    <span>{new Date(m.createdAt).toLocaleTimeString()}</span>
+                  <div className="flex items-center gap-2 mb-1 text-[11px] text-tx-muted">
+                    <span className="font-serif font-semibold text-tx">{m.senderName}</span>
+                    <span className="font-mono text-[10px] text-tx-subtle">
+                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                   <div
-                    className={`max-w-md px-4 py-2.5 rounded-2xl text-xs break-words shadow-md ${
+                    className={`max-w-md px-4 py-2.5 rounded-2xl text-xs break-words shadow-sm ${
                       isMe
-                        ? 'bg-emerald-600 text-white rounded-br-none'
-                        : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700/60'
+                        ? 'bg-tx text-canvas font-medium rounded-br-none'
+                        : 'bg-surface-2 text-tx border border-border rounded-bl-none'
                     }`}
                   >
                     {m.body}
@@ -225,7 +251,7 @@ export const ChatPage: React.FC = () => {
         </div>
 
         {/* Input Box */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/40">
+        <div className="p-4 border-t border-border bg-surface-1">
           <form onSubmit={handleSendMessage} className="flex items-center gap-3">
             <input
               type="text"
@@ -233,57 +259,56 @@ export const ChatPage: React.FC = () => {
               value={newMsg}
               onChange={(e) => setNewMsg(e.target.value)}
               placeholder={`Message #${activeConv?.name || 'channel'}...`}
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder-slate-500"
+              className="flex-1 input-luxury text-xs"
             />
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={!newMsg.trim()}
-              className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition disabled:opacity-40"
+              className="p-2.5"
             >
               <Send className="w-4 h-4" />
-            </button>
+            </Button>
           </form>
         </div>
       </div>
 
       {/* Create Channel Modal */}
-      {showNewModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-4">Create Team Channel</h3>
-            <form onSubmit={handleCreateChannel} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">
-                  Channel Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. dubai-prospecting"
-                  value={channelName}
-                  onChange={(e) => setChannelName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 text-xs text-slate-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        title="Create Team Channel"
+      >
+        <form onSubmit={handleCreateChannel} className="space-y-4">
+          <Input
+            label="Channel Name"
+            required
+            placeholder="e.g. dubai-prospecting"
+            value={channelName}
+            onChange={(e) => setChannelName(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNewModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={creatingChannel}
+            >
+              Create channel
+            </Button>
           </div>
-        </div>
-      )}
-    </div>
+        </form>
+      </Modal>
+    </Card>
   );
 };
