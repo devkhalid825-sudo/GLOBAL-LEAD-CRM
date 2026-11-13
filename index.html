@@ -1,32 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     
     <!-- Primary SEO Meta Tags -->
-    <title>Global CRM &amp; Lead Intelligence | Meta Integrated Brands, Ads &amp; Web Development Lead Finder</title>
-    <meta name="title" content="Global CRM &amp; Lead Intelligence | Meta Integrated Brands, Ads &amp; Web Development Lead Finder" />
+    <title>Global Lead CRM | Luxury Intelligence &amp; B2B Outreach Portal</title>
+    <meta name="title" content="Global Lead CRM | Luxury Intelligence &amp; B2B Outreach Portal" />
     <meta
       name="description"
-      content="All-in-one Global B2B Lead Generation and Outreach CRM. Scrape verified businesses across Google Maps, detect Meta Pixel integration and active Facebook/Instagram Ads, discover web development leads, and schedule Google Meet calls."
+      content="Swiss Minimalist, High-Performance B2B Lead Intelligence CRM. Scrape verified businesses, detect Meta Pixel integration and active Ads, discover web development leads, and manage client pipeline."
     />
-    <meta
-      name="keywords"
-      content="Global CRM, Lead Finder, Meta Pixel Scraping, Meta Ads Intelligence, Facebook Ads Library, Web Development Leads, Next.js Agencies, WordPress Developers, B2B Lead Generation, Google Maps Scraper, Outreach Automation, Google Meet CRM"
-    />
-    <meta name="author" content="Global CRM Team" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="theme-color" content="#ffffff" />
-    <link rel="canonical" href="https://globalcrm.io/" />
+    <meta name="theme-color" content="#000000" />
 
     <!-- Google Fonts: Lora, Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Zero-Flash Theme Initializer -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('crm_theme');
+          var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-white text-black font-sans antialiased selection:bg-black selection:text-white">
+  <body class="bg-canvas text-tx font-sans antialiased selection:bg-tx selection:text-canvas">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
