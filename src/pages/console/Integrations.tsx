@@ -13,14 +13,20 @@ import {
   Play,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Trash2,
   Eye,
   EyeOff,
   KeyRound,
   Shield,
-  Layers,
 } from 'lucide-react';
+import {
+  Card,
+  Button,
+  Input,
+  Modal,
+  Pill,
+  Skeleton,
+} from '../../components/ui/index.js';
 
 export const IntegrationsPage: React.FC = () => {
   const [providers, setProviders] = useState<ProviderConfigDTO[]>([]);
@@ -132,10 +138,10 @@ export const IntegrationsPage: React.FC = () => {
     setTestingKeyId(keyId);
     try {
       const result = await api.post<TestConnectionResult>(`/keys/${keyId}/test`);
-      alert(result.ok ? `✅ SUCCESS: ${result.message}` : `❌ FAILED: ${result.message}`);
+      alert(result.ok ? `SUCCESS: ${result.message}` : `FAILED: ${result.message}`);
       fetchKeys(selectedProvider);
     } catch (err: unknown) {
-      alert(`❌ Test Error: ${err instanceof Error ? err.message : String(err)}`);
+      alert(`Test Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setTestingKeyId(null);
     }
@@ -165,30 +171,31 @@ export const IntegrationsPage: React.FC = () => {
   const currentProviderConfig = providers.find((p) => p.providerId === selectedProvider);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Sliders className="w-7 h-7 text-emerald-400" />
-            Integrations & Key Pool
+          <h1 className="font-serif text-3xl font-bold text-tx flex items-center gap-3">
+            <Sliders className="w-7 h-7 text-tx" />
+            <span>Integrations &amp; Key Pool</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-tx-muted mt-1 font-sans">
             Manage provider credentials, failover priority, and automated cooldown recovery
           </p>
         </div>
 
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => {
             setShowAddModal(true);
             setTestResult(null);
             setError(null);
           }}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 transition self-start"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 mr-1.5" />
           <span>Add Encrypted Key</span>
-        </button>
+        </Button>
       </div>
 
       {/* Providers Grid / Selector */}
@@ -199,21 +206,21 @@ export const IntegrationsPage: React.FC = () => {
             <button
               key={p.providerId}
               onClick={() => setSelectedProvider(p.providerId)}
-              className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
+              className={`p-4 rounded-card border text-left transition flex flex-col justify-between ${
                 isSelected
-                  ? 'bg-slate-800 border-emerald-500/50 shadow-lg shadow-emerald-500/5'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
+                  ? 'bg-surface-2 border-tx shadow-sm'
+                  : 'bg-surface-1 border-border hover:border-border-hairline hover:bg-row-hover'
               }`}
             >
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-tx-subtle">
                   {p.kind}
                 </span>
-                <h3 className="font-semibold text-white text-sm mt-0.5 truncate">{p.name}</h3>
+                <h3 className="font-serif font-semibold text-tx text-sm mt-0.5 truncate">{p.name}</h3>
               </div>
               <div className="mt-4 flex items-center justify-between text-xs">
-                <span className="text-slate-400">Active keys:</span>
-                <span className={`font-mono font-bold ${p.activeKeysCount > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                <span className="text-tx-muted">Active:</span>
+                <span className="font-mono font-bold text-tx">
                   {p.activeKeysCount} / {p.keysCount}
                 </span>
               </div>
@@ -223,115 +230,97 @@ export const IntegrationsPage: React.FC = () => {
       </div>
 
       {/* Provider Details & Keys Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <Card className="p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <KeyRound className="w-5 h-5 text-emerald-400" />
+            <h2 className="font-serif text-lg font-bold text-tx flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-tx" />
               <span>{currentProviderConfig?.name || selectedProvider}</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Provider ID: <code className="text-emerald-300 font-mono">{selectedProvider}</code> • Failover Chain Order: #{currentProviderConfig?.chainOrder || 1}
+            <p className="text-xs text-tx-muted mt-0.5 font-mono">
+              Provider ID: <span className="text-tx font-semibold">{selectedProvider}</span> • Failover Order: #{currentProviderConfig?.chainOrder || 1}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <Shield className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center gap-2 text-xs text-tx-muted">
+            <Shield className="w-4 h-4 text-tx" />
             <span>AES-256-GCM Encrypted at rest • Masked in all outputs</span>
           </div>
         </div>
 
         {loading ? (
-          <div className="py-12 flex justify-center items-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-3" />
+          <div className="py-12 flex justify-center items-center text-tx-muted text-xs">
+            <span className="w-4 h-4 border-2 border-tx border-t-transparent rounded-full animate-spin mr-2" />
             Loading keys...
           </div>
         ) : keys.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500 mb-3">
-              <KeyRound className="w-6 h-6" />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-300">No keys added for this provider</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Add your API key to enable live operations with automatic failover and rotation.
-            </p>
-            <button
+          <div className="py-12 text-center text-tx-muted text-xs space-y-2">
+            <p>No keys added for this provider.</p>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setShowAddModal(true)}
-              className="mt-4 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition"
             >
               Add First Key
-            </button>
+            </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="text-xs uppercase bg-slate-800/40 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Label</th>
-                  <th className="py-3 px-4">Masked Key</th>
-                  <th className="py-3 px-4">Priority</th>
-                  <th className="py-3 px-4">Today Usage</th>
-                  <th className="py-3 px-4">Daily Cap</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-tx border-collapse">
+              <thead>
+                <tr className="border-b border-border text-tx-subtle text-[11px]">
+                  <th className="py-2.5 px-3 font-medium">Label</th>
+                  <th className="py-2.5 px-3 font-medium">Masked key</th>
+                  <th className="py-2.5 px-3 font-medium">Priority</th>
+                  <th className="py-2.5 px-3 font-medium">Usage today</th>
+                  <th className="py-2.5 px-3 font-medium">Daily cap</th>
+                  <th className="py-2.5 px-3 font-medium">Status</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-sans">
+              <tbody className="divide-y divide-border font-sans">
                 {keys.map((k) => (
-                  <tr key={k.id} className="hover:bg-slate-800/30 transition">
-                    <td className="py-3 px-4 font-medium text-white">{k.label}</td>
-                    <td className="py-3 px-4 font-mono text-xs text-emerald-400 bg-slate-950/40 rounded px-2">
-                      {k.maskedKey}
-                    </td>
-                    <td className="py-3 px-4 font-mono">{k.priority}</td>
-                    <td className="py-3 px-4 font-mono">{k.usageToday}</td>
-                    <td className="py-3 px-4 font-mono">{k.dailyCap > 0 ? k.dailyCap : 'Unlimited'}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                          k.status === 'healthy' && k.enabled
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : k.status === 'cooling_down'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : k.status === 'quota_over'
-                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          k.status === 'healthy' && k.enabled ? 'bg-emerald-400' : 'bg-current'
-                        }`} />
-                        {k.enabled ? k.status : 'Disabled'}
+                  <tr key={k.id} className="hover:bg-row-hover transition">
+                    <td className="py-3 px-3 font-medium text-tx">{k.label}</td>
+                    <td className="py-3 px-3">
+                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-surface-2 border border-border text-tx">
+                        {k.maskedKey}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-3 font-mono text-tx">{k.priority}</td>
+                    <td className="py-3 px-3 font-mono text-tx">{k.usageToday}</td>
+                    <td className="py-3 px-3 font-mono text-tx">{k.dailyCap > 0 ? k.dailyCap : 'Unlimited'}</td>
+                    <td className="py-3 px-3">
+                      <Pill active={k.status === 'healthy' && k.enabled} className="text-[10px]">
+                        {k.enabled ? k.status : 'Disabled'}
+                      </Pill>
+                    </td>
+                    <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleTestSavedKey(k.id)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           disabled={testingKeyId === k.id}
-                          className="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 transition disabled:opacity-50"
+                          onClick={() => handleTestSavedKey(k.id)}
                         >
                           {testingKeyId === k.id ? (
-                            <div className="w-3 h-3 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                            <span className="w-3 h-3 border-2 border-tx border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <Play className="w-3 h-3 text-emerald-400" />
+                            <Play className="w-3 h-3 mr-1" />
                           )}
                           <span>Test</span>
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleToggleKey(k)}
-                          className={`px-2.5 py-1 text-xs font-medium rounded-lg transition ${
-                            k.enabled
-                              ? 'bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400'
-                              : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                          }`}
                         >
                           {k.enabled ? 'Disable' : 'Enable'}
-                        </button>
+                        </Button>
 
                         <button
                           onClick={() => handleDeleteKey(k.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400 rounded transition"
+                          className="p-1.5 text-tx-subtle hover:text-tx rounded transition"
                           title="Delete Key"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -344,159 +333,126 @@ export const IntegrationsPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Add Key Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-emerald-400" />
-                Add API Key for {currentProviderConfig?.name || selectedProvider}
-              </h3>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title={`Add API Key for ${currentProviderConfig?.name || selectedProvider}`}
+      >
+        {error && (
+          <Card className="p-3 mb-4 text-xs text-tx">
+            {error}
+          </Card>
+        )}
+
+        <form onSubmit={handleSaveKey} className="space-y-4">
+          <Input
+            label="Key Label / Account Name"
+            required
+            placeholder="e.g. Production Key 1 or Client Account"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+          />
+
+          <div>
+            <label className="block text-xs font-medium text-tx-muted mb-1.5">
+              API Key / Secret Token
+            </label>
+            <div className="relative">
+              <input
+                type={showPlainKey ? 'text' : 'password'}
+                required
+                placeholder="Paste full key (encrypted immediately upon saving)"
+                value={newKey}
+                onChange={(e) => setNewKey(e.target.value)}
+                className="input-luxury pr-10 font-mono text-xs"
+              />
               <button
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-white"
+                type="button"
+                onClick={() => setShowPlainKey(!showPlainKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-tx-muted hover:text-tx"
               >
-                ✕
+                {showPlainKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <span className="text-[11px] text-tx-subtle mt-1 block">
+              Plain key will never be visible again after leaving this dialog.
+            </span>
+          </div>
 
-            {error && (
-              <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs">
-                {error}
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              type="number"
+              min={1}
+              label="Priority (1 = highest)"
+              value={priority}
+              onChange={(e) => setPriority(parseInt(e.target.value, 10) || 1)}
+              className="font-mono text-xs"
+            />
+            <Input
+              type="number"
+              min={0}
+              label="Daily Cap (0 = unlimited)"
+              value={dailyCap}
+              onChange={(e) => setDailyCap(parseInt(e.target.value, 10) || 0)}
+              className="font-mono text-xs"
+            />
+          </div>
+
+          {/* Live Test Connection section */}
+          <div className="pt-2 border-t border-border flex items-center justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={testing || !newKey.trim()}
+              onClick={handleTestRawKey}
+            >
+              {testing ? (
+                <span className="w-3 h-3 border-2 border-tx border-t-transparent rounded-full animate-spin mr-1.5" />
+              ) : (
+                <Play className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              <span>Test Connection Live</span>
+            </Button>
+
+            {testResult && (
+              <div className="flex items-center gap-1.5 text-xs font-medium text-tx">
+                {testResult.ok ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                <span>{testResult.ok ? 'Success' : 'Failed'}</span>
               </div>
             )}
-
-            <form onSubmit={handleSaveKey} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  Key Label / Account Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Production Key 1 or Client Account"
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  API Key / Secret Token
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPlainKey ? 'text' : 'password'}
-                    required
-                    placeholder="Paste full key (encrypted immediately upon saving)"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-3.5 pr-10 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPlainKey(!showPlainKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    {showPlainKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Plain key will never be visible again after leaving this dialog.
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Priority (1 = highest)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={priority}
-                    onChange={(e) => setPriority(parseInt(e.target.value, 10) || 1)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Daily Cap (0 = unlimited)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={dailyCap}
-                    onChange={(e) => setDailyCap(parseInt(e.target.value, 10) || 0)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Live Test Connection section */}
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={handleTestRawKey}
-                  disabled={testing || !newKey.trim()}
-                  className="px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl flex items-center gap-1.5 transition disabled:opacity-50"
-                >
-                  {testing ? (
-                    <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 text-emerald-400" />
-                  )}
-                  <span>Test Connection Live</span>
-                </button>
-
-                {testResult && (
-                  <div
-                    className={`flex items-center gap-1.5 text-xs font-medium ${
-                      testResult.ok ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {testResult.ok ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    <span>{testResult.ok ? 'Success' : 'Failed'}</span>
-                  </div>
-                )}
-              </div>
-
-              {testResult && (
-                <div
-                  className={`p-3 rounded-xl text-xs ${
-                    testResult.ok
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
-                      : 'bg-rose-500/10 border border-rose-500/20 text-rose-300'
-                  }`}
-                >
-                  {testResult.message}
-                </div>
-              )}
-
-              <div className="pt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !newKey.trim()}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl text-sm transition shadow-lg shadow-emerald-900/20 disabled:opacity-50"
-                >
-                  {saving ? 'Encrypting & Storing...' : 'Save Encrypted Key'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          {testResult && (
+            <Card className="p-3 text-xs text-tx font-mono">
+              {testResult.message}
+            </Card>
+          )}
+
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAddModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={saving}
+              disabled={!newKey.trim()}
+            >
+              Save encrypted key
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

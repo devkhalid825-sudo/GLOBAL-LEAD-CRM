@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { api, getAccessToken } from '../../api/client.js';
 import { SystemLogDTO } from '@lead-crm/shared';
-import { Terminal, Filter, RefreshCw, Trash2, ArrowDown } from 'lucide-react';
+import { Terminal, Filter, RefreshCw, Trash2 } from 'lucide-react';
+import { Card, Button, Input, Select } from '../../components/ui/index.js';
 
 export const LogsPage: React.FC = () => {
   const [logs, setLogs] = useState<SystemLogDTO[]>([]);
@@ -69,54 +70,55 @@ export const LogsPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 flex flex-col h-[calc(100vh-8rem)]">
+    <div className="space-y-6 flex flex-col h-[calc(100vh-8rem)] max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0 pb-4 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Terminal className="w-7 h-7 text-emerald-400" />
-            Live System Logs
+          <h1 className="font-serif text-3xl font-bold text-tx flex items-center gap-3">
+            <Terminal className="w-7 h-7 text-tx" />
+            <span>Live System Logs</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+          <p className="text-sm text-tx-muted mt-1 flex items-center gap-2">
             <span>Tail of 100MB capped MongoDB system logs</span>
-            <span
-              className={`w-2 h-2 rounded-full ${
-                connected ? 'bg-emerald-400 shadow-emerald-400/50 shadow-md' : 'bg-rose-500'
-              }`}
-            />
-            <span className="text-xs font-mono">{connected ? 'STREAM ACTIVE' : 'RECONNECTING'}</span>
+            <span className="font-mono text-xs text-tx-subtle flex items-center gap-1.5 ml-2">
+              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-tx animate-pulse' : 'border border-tx-subtle'}`} />
+              <span>{connected ? 'STREAM ACTIVE' : 'RECONNECTING'}</span>
+            </span>
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setLogs([])}
-            className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition"
             title="Clear display logs"
+            className="p-2"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={fetchLogs}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             <span>Reload Recent</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center gap-4 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-semibold uppercase text-slate-400">Filters:</span>
+      <Card className="p-4 flex flex-wrap items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 text-tx-muted text-xs">
+          <Filter className="w-4 h-4 text-tx" />
+          <span className="text-xs font-semibold uppercase">Filters:</span>
         </div>
 
         <select
           value={levelFilter}
           onChange={(e) => setLevelFilter(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white"
+          className="input-luxury text-xs py-1.5 px-3 w-auto"
         >
           <option value="all">Level: All</option>
           <option value="info">Info</option>
@@ -128,7 +130,7 @@ export const LogsPage: React.FC = () => {
         <select
           value={moduleFilter}
           onChange={(e) => setModuleFilter(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white"
+          className="input-luxury text-xs py-1.5 px-3 w-auto"
         >
           <option value="all">Module: All</option>
           <option value="server">Server</option>
@@ -144,50 +146,53 @@ export const LogsPage: React.FC = () => {
           placeholder="Search log messages..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 flex-1 min-w-[200px]"
+          className="input-luxury text-xs py-1.5 px-3 flex-1 min-w-[200px]"
         />
 
-        <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-xs text-tx-muted cursor-pointer select-none">
           <input
             type="checkbox"
             checked={autoScroll}
             onChange={(e) => setAutoScroll(e.target.checked)}
-            className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0"
+            className="rounded border-border bg-surface-2 text-tx focus:ring-0"
           />
           <span>Auto-scroll to bottom</span>
         </label>
-      </div>
+      </Card>
 
       {/* Terminal View */}
       <div
         ref={logContainerRef}
-        className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 font-mono text-xs overflow-y-auto space-y-1 shadow-inner select-text"
+        className="flex-1 bg-surface-1 border border-border rounded-card p-4 font-mono text-xs overflow-y-auto space-y-1 shadow-inner select-text"
       >
         {filteredLogs.length === 0 ? (
-          <div className="text-slate-600 text-center py-12">No logs matching current criteria...</div>
+          <div className="text-tx-subtle text-center py-12">No logs matching current criteria...</div>
         ) : (
           filteredLogs.map((l, idx) => {
-            const levelColor =
-              l.level === 'error'
-                ? 'text-rose-400 bg-rose-500/10'
-                : l.level === 'warn'
-                ? 'text-amber-400 bg-amber-500/10'
-                : l.level === 'debug'
-                ? 'text-blue-400'
-                : 'text-emerald-400';
-
             return (
-              <div key={idx} className="flex items-start gap-3 py-0.5 hover:bg-slate-900/40 rounded px-2">
-                <span className="text-slate-500 flex-shrink-0 select-none">
+              <div key={idx} className="flex items-start gap-3 py-1 hover:bg-row-hover rounded px-2 transition">
+                <span className="text-tx-subtle flex-shrink-0 select-none">
                   {new Date(l.createdAt).toLocaleTimeString()}
                 </span>
-                <span className={`px-1.5 py-0.2 rounded font-bold uppercase text-[10px] flex-shrink-0 ${levelColor}`}>
-                  {l.level}
+                <span className="flex-shrink-0">
+                  {l.level === 'error' ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-tx text-canvas">
+                      ERROR
+                    </span>
+                  ) : l.level === 'warn' ? (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border text-tx">
+                      WARN
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] text-tx-muted">
+                      {l.level.toUpperCase()}
+                    </span>
+                  )}
                 </span>
-                <span className="text-slate-400 flex-shrink-0 font-semibold">[{l.module}]</span>
-                <span className="text-slate-200 break-all">{l.msg}</span>
+                <span className="text-tx flex-shrink-0 font-semibold">[{l.module}]</span>
+                <span className="text-tx break-all">{l.msg}</span>
                 {l.meta && Object.keys(l.meta).length > 0 && (
-                  <span className="text-slate-500 text-[11px] truncate max-w-sm">
+                  <span className="text-tx-subtle text-[11px] truncate max-w-sm">
                     {JSON.stringify(l.meta)}
                   </span>
                 )}

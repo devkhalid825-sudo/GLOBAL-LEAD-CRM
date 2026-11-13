@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../api/client.js';
 import { AuditLogDTO } from '@lead-crm/shared';
-import { FileCheck2, RefreshCw, Shield, User, Globe } from 'lucide-react';
+import { FileCheck2, RefreshCw, User } from 'lucide-react';
+import { Card, Button, Pill } from '../../components/ui/index.js';
 
 export const AuditPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogDTO[]>([]);
@@ -30,40 +31,42 @@ export const AuditPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <FileCheck2 className="w-7 h-7 text-emerald-400" />
-            Admin Audit Trail
+          <h1 className="font-serif text-3xl font-bold text-tx flex items-center gap-3">
+            <FileCheck2 className="w-7 h-7 text-tx" />
+            <span>Admin Audit Trail</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-tx-muted mt-1 font-sans">
             Immutable log of every administrative modification, key addition, config change, and permission update
           </p>
         </div>
 
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={fetchAuditLogs}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition self-start"
+          disabled={loading}
         >
-          <RefreshCw className={`w-4 h-4 text-emerald-400 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Audit Trail</span>
-        </button>
+        </Button>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
           <div>
-            <h2 className="text-lg font-bold text-white">Recorded Actions ({filteredLogs.length})</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Secrets and passwords in audit records are masked.</p>
+            <h2 className="font-serif text-lg font-bold text-tx">Recorded Actions ({filteredLogs.length})</h2>
+            <p className="text-xs text-tx-muted mt-0.5">Secrets and passwords in audit records are masked.</p>
           </div>
 
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white"
+            className="input-luxury text-xs py-1.5 px-3 w-auto"
           >
             <option value="all">All Actions</option>
             <option value="create_key">create_key</option>
@@ -78,56 +81,56 @@ export const AuditPage: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="py-12 flex justify-center items-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-3" />
+          <div className="py-12 flex justify-center items-center text-tx-muted text-xs">
+            <span className="w-4 h-4 border-2 border-tx border-t-transparent rounded-full animate-spin mr-2" />
             Loading audit records...
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="py-12 text-center text-slate-500">
+          <div className="py-12 text-center text-tx-muted text-xs">
             No audit events recorded yet. Any admin console action will be tracked here.
           </div>
         ) : (
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="text-xs uppercase bg-slate-800/40 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">Admin Actor</th>
-                  <th className="py-3 px-4">Action</th>
-                  <th className="py-3 px-4">Target Entity</th>
-                  <th className="py-3 px-4">Masked Details</th>
-                  <th className="py-3 px-4">IP</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-tx border-collapse">
+              <thead>
+                <tr className="border-b border-border text-tx-subtle text-[11px]">
+                  <th className="py-2.5 px-3 font-medium">Timestamp</th>
+                  <th className="py-2.5 px-3 font-medium">Admin actor</th>
+                  <th className="py-2.5 px-3 font-medium">Action</th>
+                  <th className="py-2.5 px-3 font-medium">Target entity</th>
+                  <th className="py-2.5 px-3 font-medium">Masked details</th>
+                  <th className="py-2.5 px-3 font-medium">IP</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-sans">
+              <tbody className="divide-y divide-border font-sans">
                 {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-800/30 transition text-xs">
-                    <td className="py-3 px-4 font-mono text-slate-400">
+                  <tr key={log.id} className="hover:bg-row-hover transition text-xs">
+                    <td className="py-3 px-3 font-mono text-tx-subtle text-[11px]">
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-white">
+                    <td className="py-3 px-3 font-semibold text-tx">
                       <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-emerald-400" />
+                        <User className="w-3.5 h-3.5 text-tx" />
                         <span>{log.actorEmail || 'System'}</span>
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono text-emerald-300">
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 font-bold">
+                    <td className="py-3 px-3">
+                      <Pill active className="text-[10px] font-mono">
                         {log.action}
-                      </span>
+                      </Pill>
                     </td>
-                    <td className="py-3 px-4 font-mono text-slate-300">{log.target}</td>
-                    <td className="py-3 px-4 font-mono text-slate-400 max-w-xs truncate">
+                    <td className="py-3 px-3 font-mono text-tx">{log.target}</td>
+                    <td className="py-3 px-3 font-mono text-tx-muted max-w-xs truncate">
                       {log.afterMasked ? JSON.stringify(log.afterMasked) : '—'}
                     </td>
-                    <td className="py-3 px-4 font-mono text-slate-500">{log.ip || '127.0.0.1'}</td>
+                    <td className="py-3 px-3 font-mono text-tx-subtle">{log.ip || '127.0.0.1'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
