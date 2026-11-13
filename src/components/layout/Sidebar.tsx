@@ -18,8 +18,6 @@ import {
   UserCog,
   Activity,
   X,
-  Radio,
-  Zap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,39 +31,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
   const baseNav = [
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-    { label: 'Lead Finder', to: '/finder', icon: Compass, badge: 'Grid 2km' },
-    { label: 'Leads Directory', to: '/leads', icon: Users, badge: 'Meta' },
-    { label: 'Meetings & Calls', to: '/meetings', icon: Calendar, badge: 'Meet' },
-    { label: 'Proposals & Deals', to: '/proposals', icon: FileText },
-    { label: 'Unified Inbox', to: '/inbox', icon: Inbox },
-    { label: 'Team Chat', to: '/chat', icon: MessageSquare },
-    { label: 'Follow-ups & Drip', to: '/followups', icon: Clock },
-    { label: 'Analytics & Reports', to: '/reports', icon: BarChart3 },
+    { label: 'Lead finder', to: '/finder', icon: Compass, badge: 'Grid 2km' },
+    { label: 'Leads directory', to: '/leads', icon: Users, badge: 'Meta' },
+    { label: 'Meetings & calls', to: '/meetings', icon: Calendar, badge: 'Meet' },
+    { label: 'Proposals & deals', to: '/proposals', icon: FileText },
+    { label: 'Unified inbox', to: '/inbox', icon: Inbox },
+    { label: 'Team chat', to: '/chat', icon: MessageSquare },
+    { label: 'Follow-ups & drip', to: '/followups', icon: Clock },
+    { label: 'Analytics & reports', to: '/reports', icon: BarChart3 },
   ];
 
   const consoleNav = [
-    { label: 'Integrations & Keys', to: '/console/integrations', icon: Sliders },
-    { label: 'Config & Env', to: '/console/config', icon: Settings },
-    { label: 'Realtime Logs', to: '/console/logs', icon: Terminal },
-    { label: 'Audit Trail', to: '/console/audit', icon: FileCheck2 },
-    { label: 'Team Members', to: '/console/users', icon: UserCog },
-    { label: 'System Health', to: '/console/health', icon: Activity },
+    { label: 'Integrations & keys', to: '/console/integrations', icon: Sliders },
+    { label: 'Config & env', to: '/console/config', icon: Settings },
+    { label: 'Realtime logs', to: '/console/logs', icon: Terminal },
+    { label: 'Audit trail', to: '/console/audit', icon: FileCheck2 },
+    { label: 'Team members', to: '/console/users', icon: UserCog },
+    { label: 'System health', to: '/console/health', icon: Activity },
   ];
 
   const renderNavContent = (isMobile = false) => (
     <>
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/80 bg-slate-950/40">
+      <div className="h-16 flex items-center justify-between px-6 border-b border-border bg-surface-1">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 flex items-center justify-center font-black text-base shadow-lg shadow-emerald-500/20">
-            G
+          <div className="w-8 h-8 rounded-btn bg-tx text-canvas flex items-center justify-center font-bold text-xs tracking-wider">
+            CRM
           </div>
           <div>
-            <span className="font-extrabold text-white tracking-tight text-sm flex items-center gap-1.5">
-              <span>Global CRM</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="serif font-bold text-tx tracking-[0.12em] text-sm">
+              GLOBAL CRM
             </span>
-            <span className="block text-[10px] uppercase tracking-wider text-emerald-400 font-bold font-mono">
+            <span className="block text-[10px] text-tx-subtle mono uppercase">
               {user?.role || 'user'} workspace
             </span>
           </div>
@@ -73,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         {isMobile && onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-tx-subtle hover:text-tx rounded-lg hover:bg-surface-2 transition"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
@@ -81,10 +78,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3.5 py-4 space-y-1 scrollbar-thin">
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
+      <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-1">
+        <div className="text-[10px] font-semibold text-tx-subtle uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
           <span>CRM Intelligence</span>
-          <span className="text-[9px] text-emerald-400/80 font-mono">LIVE</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-tx animate-pulse" />
         </div>
 
         {baseNav.map((item) => {
@@ -97,19 +94,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                 if (isMobile && onClose) onClose();
               }}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition group ${
+                `flex items-center justify-between px-3 py-2 rounded-btn text-xs font-medium transition duration-150 ${
                   isActive
-                    ? 'bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 text-emerald-400 border border-emerald-500/25 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    ? 'bg-surface-2 text-tx border border-border shadow-sm font-semibold'
+                    : 'text-tx-muted hover:text-tx hover:bg-surface-2'
                 }`
               }
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Icon className="w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110" />
+                <Icon className="w-4 h-4 flex-shrink-0 text-tx-subtle" />
                 <span className="truncate">{item.label}</span>
               </div>
               {item.badge && (
-                <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 group-hover:text-emerald-300 transition">
+                <span className="text-[10px] mono px-1.5 py-0.5 rounded-full border border-border bg-surface-1 text-tx-subtle">
                   {item.badge}
                 </span>
               )}
@@ -118,13 +115,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         })}
 
         {isAdmin && (
-          <div className="pt-5">
-            <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
+          <div className="pt-5 mt-4 border-t border-border space-y-1">
+            <div className="text-[10px] font-semibold text-tx-subtle uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
               <span>Admin Console</span>
-              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                ROOT
-              </span>
+              <span className="mono text-[9px] px-1 rounded border border-border">ROOT</span>
             </div>
+
             {consoleNav.map((item) => {
               const Icon = item.icon;
               return (
@@ -135,15 +131,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                     if (isMobile && onClose) onClose();
                   }}
                   className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition ${
+                    `flex items-center justify-between px-3 py-2 rounded-btn text-xs font-medium transition duration-150 ${
                       isActive
-                        ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ? 'bg-surface-2 text-tx border border-border shadow-sm font-semibold'
+                        : 'text-tx-muted hover:text-tx hover:bg-surface-2'
                     }`
                   }
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">{item.label}</span>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon className="w-4 h-4 flex-shrink-0 text-tx-subtle" />
+                    <span className="truncate">{item.label}</span>
+                  </div>
                 </NavLink>
               );
             })}
@@ -151,36 +149,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         )}
       </nav>
 
-      {/* Footer Info */}
-      <div className="p-3.5 border-t border-slate-800/80 bg-slate-950/40 text-[11px] text-slate-400 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Meta Ads Sync</span>
-        </span>
-        <span className="text-slate-500 font-mono text-[10px]">v2.4 Pro</span>
+      {/* User profile footer */}
+      <div className="p-4 border-t border-border bg-surface-1 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-full border border-border bg-surface-2 text-tx font-bold text-xs flex items-center justify-center flex-shrink-0">
+            {user?.name?.slice(0, 2).toUpperCase() || 'AK'}
+          </div>
+          <div className="min-w-0">
+            <div className="font-semibold text-tx truncate">{user?.name}</div>
+            <div className="text-[11px] text-tx-subtle truncate">{user?.email}</div>
+          </div>
+        </div>
       </div>
     </>
   );
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-slate-900/95 border-r border-slate-800/90 flex-col flex-shrink-0 text-slate-300 select-none">
+      {/* Desktop Sidebar (Fixed Left) */}
+      <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 left-0 z-30 bg-surface-1 border-r border-border select-none">
         {renderNavContent(false)}
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
-            onClick={onClose}
-          />
-          <div className="relative w-72 max-w-[85vw] bg-slate-900 border-r border-slate-800 flex flex-col text-slate-300 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
-            {renderNavContent(true)}
-          </div>
-        </div>
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
+        />
       )}
+
+      {/* Mobile Sidebar Drawer */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-surface-1 border-r border-border flex flex-col lg:hidden transform transition-transform duration-200 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {renderNavContent(true)}
+      </div>
     </>
   );
 };
