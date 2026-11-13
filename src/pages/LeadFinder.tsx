@@ -6,14 +6,13 @@ import {
   Pause,
   RefreshCw,
   AlertTriangle,
-  CheckCircle2,
-  Sparkles,
   Plus,
   X,
   Target,
   Zap,
   KeyRound,
 } from 'lucide-react';
+import { Card, Button, Input, Select, Textarea, Slider, Pill, Modal, Progress, Toast, EmptyState, Skeleton } from '../components/ui/index.js';
 
 interface CountryItem {
   code: string;
@@ -42,22 +41,22 @@ const FALLBACK_COUNTRIES: CountryItem[] = [
 ];
 
 const FALLBACK_CATEGORIES: CategoryItem[] = [
-  { id: 'cat_webdev', name: 'Website Development (Next.js, WordPress, Web Apps)' },
-  { id: 'cat_meta_ecom', name: 'Meta Integrated E-Commerce Brands (Meta Ads & Pixel)' },
-  { id: 'cat_meta_ads', name: 'Meta Advertisers & D2C Brands (Active Facebook/Instagram Ads)' },
-  { id: 'cat_shopify', name: 'Shopify & Headless E-Commerce Development' },
-  { id: 'cat_landing', name: 'Webflow, Framer & High-Converting Landing Pages' },
-  { id: 'cat_crm', name: 'Custom CRM, ERP & SaaS Web Applications' },
-  { id: 'cat_appdev', name: 'Mobile App Development (iOS, Android, Flutter)' },
-  { id: 'cat_video', name: 'AI Video Ads, UGC & Explainer Video Production' },
-  { id: 'cat_aicontent', name: 'AI Content & Commercial Product Photography' },
-  { id: 'cat_seo', name: 'SEO & Google Search Ranking Services' },
-  { id: 'cat_speed', name: 'Website Speed Optimization & Security Hardening' },
-  { id: 'cat_remote_staff', name: 'Remote Staff Augmentation & Dedicated Developers' },
-  { id: 'cat_it', name: 'Digital Agencies & Full-Service IT Houses' },
-  { id: 'cat_realestate', name: 'Real Estate & Property Developers' },
-  { id: 'cat_clinics', name: 'High-Ticket Aesthetic & Dental Clinics' },
-  { id: 'cat_restaurants', name: 'Restaurants, Cafes & Retail Brands' },
+  { id: 'cat_webdev', name: 'Website development (Next.js, WordPress, Web Apps)' },
+  { id: 'cat_meta_ecom', name: 'Meta integrated e-commerce brands (Meta Ads & Pixel)' },
+  { id: 'cat_meta_ads', name: 'Meta advertisers & D2C brands (Active Facebook/Instagram Ads)' },
+  { id: 'cat_shopify', name: 'Shopify & headless e-commerce development' },
+  { id: 'cat_landing', name: 'Webflow, Framer & high-converting landing pages' },
+  { id: 'cat_crm', name: 'Custom CRM, ERP & SaaS web applications' },
+  { id: 'cat_appdev', name: 'Mobile app development (iOS, Android, Flutter)' },
+  { id: 'cat_video', name: 'AI video ads, UGC & explainer video production' },
+  { id: 'cat_aicontent', name: 'AI content & commercial product photography' },
+  { id: 'cat_seo', name: 'SEO & Google Search ranking services' },
+  { id: 'cat_speed', name: 'Website speed optimization & security hardening' },
+  { id: 'cat_remote_staff', name: 'Remote staff augmentation & dedicated developers' },
+  { id: 'cat_it', name: 'Digital agencies & full-service IT houses' },
+  { id: 'cat_realestate', name: 'Real estate & property developers' },
+  { id: 'cat_clinics', name: 'High-ticket aesthetic & dental clinics' },
+  { id: 'cat_restaurants', name: 'Restaurants, cafes & retail brands' },
 ];
 
 const FALLBACK_CITIES: Record<string, CityItem[]> = {
@@ -65,15 +64,11 @@ const FALLBACK_CITIES: Record<string, CityItem[]> = {
     { id: 'pk_1', name: 'Lahore' },
     { id: 'pk_2', name: 'Karachi' },
     { id: 'pk_3', name: 'Islamabad' },
-    { id: 'pk_4', name: 'Rawalpindi' },
-    { id: 'pk_5', name: 'Faisalabad' },
   ],
   US: [
     { id: 'us_1', name: 'New York' },
     { id: 'us_2', name: 'Los Angeles' },
     { id: 'us_3', name: 'Chicago' },
-    { id: 'us_4', name: 'Houston' },
-    { id: 'us_5', name: 'Miami' },
   ],
   AE: [
     { id: 'ae_1', name: 'Dubai' },
@@ -83,7 +78,6 @@ const FALLBACK_CITIES: Record<string, CityItem[]> = {
   GB: [
     { id: 'gb_1', name: 'London' },
     { id: 'gb_2', name: 'Manchester' },
-    { id: 'gb_3', name: 'Birmingham' },
   ],
   SA: [
     { id: 'sa_1', name: 'Riyadh' },
@@ -119,19 +113,16 @@ export const LeadFinderPage: React.FC = () => {
   const [savingCustomCat, setSavingCustomCat] = useState(false);
   const [customError, setCustomError] = useState<string | null>(null);
 
-  // Dynamic API Keys & Quota Modal
+  // Dynamic API Keys Modal
   const [showKeysModal, setShowKeysModal] = useState(false);
   const [keysStatus, setKeysStatus] = useState<any[]>([]);
   const [newKeyProvider, setNewKeyProvider] = useState('gemini');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [savingKey, setSavingKey] = useState(false);
-  const [keyNotice, setKeyNotice] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  // Estimator
-  const [estimate, setEstimate] = useState<any | null>(null);
-  const [estimating, setEstimating] = useState(false);
+  // Search execution & feedback
   const [starting, setStarting] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const fetchDropdowns = async () => {
     try {
@@ -146,9 +137,7 @@ export const LeadFinderPage: React.FC = () => {
       if (categoriesRes.status === 'fulfilled' && Array.isArray(categoriesRes.value) && categoriesRes.value.length > 0) {
         setCategories(categoriesRes.value);
       }
-    } catch {
-      // Fallbacks used
-    }
+    } catch {}
   };
 
   const fetchCities = async (countryCode: string) => {
@@ -191,43 +180,18 @@ export const LeadFinderPage: React.FC = () => {
     e.preventDefault();
     if (!newKeyValue.trim()) return;
     setSavingKey(true);
-    setKeyNotice(null);
     try {
       await api.post('/finder/keys/add', {
         providerId: newKeyProvider,
         key: newKeyValue.trim(),
       });
-      setKeyNotice({ msg: `Key for ${newKeyProvider.toUpperCase()} hot-reloaded successfully!`, type: 'success' });
+      setNotice(`Key for ${newKeyProvider.toUpperCase()} hot-reloaded successfully.`);
       setNewKeyValue('');
       fetchKeysStatus();
     } catch (err: any) {
-      setKeyNotice({ msg: err.message || 'Failed to save key', type: 'error' });
+      setNotice(`Key reload failed: ${err.message || 'Error'}`);
     } finally {
       setSavingKey(false);
-    }
-  };
-
-  const fetchEstimate = async () => {
-    if (!selectedCountry || !selectedCity || !selectedCategory) return;
-    setEstimating(true);
-    try {
-      const res = await api.post<any>('/finder/estimate', {
-        country: selectedCountry,
-        city: selectedCity,
-        categoryId: selectedCategory,
-        providerId: selectedSource,
-      });
-      setEstimate(res);
-    } catch {
-      setEstimate({
-        cellsCount: 12,
-        keywordsCount: 4,
-        totalRequests: 48,
-        estimatedLeads: 240,
-        currency: 'USD',
-      });
-    } finally {
-      setEstimating(false);
     }
   };
 
@@ -241,13 +205,8 @@ export const LeadFinderPage: React.FC = () => {
     fetchCities(selectedCountry);
   }, [selectedCountry]);
 
-  useEffect(() => {
-    fetchEstimate();
-  }, [selectedCountry, selectedCity, selectedCategory, selectedSource, searchRadius]);
-
   const handleStartSearch = async () => {
     setStarting(true);
-    setMsg(null);
     try {
       const res = await api.post<any>('/finder/jobs/start', {
         country: selectedCountry,
@@ -255,10 +214,10 @@ export const LeadFinderPage: React.FC = () => {
         categoryId: selectedCategory,
         providerId: selectedSource,
       });
-      setMsg(`Search job started: ${res?.jobId || 'Active'}! Tracking leads in real-time.`);
+      setNotice(`Extraction job started: ${res?.jobId || 'Active'}`);
       fetchJobs();
     } catch (err: any) {
-      setMsg(`Error launching search: ${err.message}`);
+      setNotice(`Failed to start extraction: ${err.message}`);
     } finally {
       setStarting(false);
     }
@@ -286,7 +245,7 @@ export const LeadFinderPage: React.FC = () => {
       setShowCustomModal(false);
       setCustomCatName('');
       setCustomCatKeywords('');
-      setMsg(`Custom category "${newCat.name}" added and selected!`);
+      setNotice(`Custom category "${newCat.name}" saved.`);
     } catch (err: any) {
       setCustomError(err.message || 'Failed to save custom category');
     } finally {
@@ -298,8 +257,9 @@ export const LeadFinderPage: React.FC = () => {
     try {
       await api.post(`/finder/jobs/${jobId}/pause`);
       fetchJobs();
+      setNotice('Search job paused at checkpoint');
     } catch (err: any) {
-      alert(err.message);
+      setNotice(err.message || 'Failed to pause');
     }
   };
 
@@ -307,71 +267,69 @@ export const LeadFinderPage: React.FC = () => {
     try {
       await api.post(`/finder/jobs/${jobId}/resume`);
       fetchJobs();
+      setNotice('Search job resumed');
     } catch (err: any) {
-      alert(err.message);
+      setNotice(err.message || 'Failed to resume');
     }
   };
 
+  // Active top job progress calculation
+  const topJob = jobs.length > 0 ? jobs[0] : null;
+  const progressPct = topJob && topJob.progressTotal > 0
+    ? Math.round((topJob.progressDone / topJob.progressTotal) * 100)
+    : 0;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Editorial Luxury Header matching Figma */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-[#E5E5E5]">
+      {/* Editorial Luxury Header matching visual source */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pb-6 border-b border-border">
         <div>
-          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-black leading-tight">
+          <h1 className="serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tightest text-tx leading-tight">
             Find new leads.
           </h1>
-          <p className="text-sm text-[#525252] mt-2 font-sans">
+          <p className="text-sm text-tx-muted mt-2 font-sans">
             Pick an engine, set the area, and watch verified leads arrive.
           </p>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => {
               fetchKeysStatus();
               setShowKeysModal(true);
             }}
-            className="btn-ghost text-xs flex items-center gap-2"
+            size="sm"
           >
-            <KeyRound className="w-3.5 h-3.5" />
+            <KeyRound className="w-3.5 h-3.5 mr-1.5" />
             <span>Hot-reload API vault</span>
-          </button>
-          <span className="pill-luxury on text-xs">
-            Meta &amp; Google Ads Active
-          </span>
+          </Button>
+          <Pill active className="pointer-events-none text-xs">
+            Meta &amp; Google Ads active
+          </Pill>
         </div>
       </div>
 
-      {msg && (
-        <div className="p-3.5 bg-[#F8F8F8] border border-[#E5E5E5] rounded-2xl text-black text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-black flex-shrink-0" />
-            <span>{msg}</span>
-          </div>
-          <button onClick={() => setMsg(null)} className="text-[#737373] hover:text-black">✕</button>
-        </div>
-      )}
-
-      {/* Main Grid: Finder Config (Span 8) & Engine Status (Span 4) matching Figma HTML */}
+      {/* Main Grid: Finder Config (Span 8) & Failover Monitor (Span 4) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Finder Config Card (Span 8) */}
+        {/* Finder Search Form Card (Span 8) */}
         <div className="lg:col-span-8 card-luxury p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
-            <div className="sm:col-span-8">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs text-[#525252] font-medium">Search query &amp; industry</label>
+            <div className="sm:col-span-8 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-tx-muted font-medium">Search query &amp; industry</label>
                 <button
                   onClick={() => setShowCustomModal(true)}
-                  className="text-xs text-black font-semibold hover:underline"
+                  className="text-xs text-tx font-semibold hover:underline"
                 >
-                  + Custom Niche
+                  + Custom niche
                 </button>
               </div>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-white border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black font-medium"
+                className="input-luxury text-xs py-2.5 font-medium"
               >
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -381,12 +339,12 @@ export const LeadFinderPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="sm:col-span-4">
-              <label className="text-xs text-[#525252] font-medium block mb-1.5">City / Location</label>
+            <div className="sm:col-span-4 space-y-1.5">
+              <label className="text-xs text-tx-muted font-medium block">City / Location</label>
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-white border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black font-medium"
+                className="input-luxury text-xs py-2.5 font-medium"
               >
                 {cities.map((city) => (
                   <option key={city.id} value={city.name}>
@@ -397,25 +355,19 @@ export const LeadFinderPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Radius Slider matching Figma */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[#525252]">Search Radius: <strong className="mono text-black">{searchRadius} km</strong></span>
-              <span className="mono text-[#737373]">1km – 100km</span>
-            </div>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={searchRadius}
-              onChange={(e) => setSearchRadius(Number(e.target.value))}
-              className="w-full accent-black cursor-pointer"
-            />
-          </div>
+          {/* GeoGrid Radius Range Slider matching Figma */}
+          <Slider
+            label={`Search radius: ${searchRadius} km`}
+            valueDisplay={`${searchRadius} km`}
+            min={1}
+            max={100}
+            value={searchRadius}
+            onChange={(e) => setSearchRadius(Number(e.target.value))}
+          />
 
-          {/* Engine Selector Pills matching Figma */}
-          <div>
-            <label className="text-xs text-[#525252] block mb-2 font-medium">Scraping Engine</label>
+          {/* Scraping Engine Selection Pills matching Figma */}
+          <div className="space-y-2">
+            <label className="text-xs text-tx-muted block font-medium">Scraping engine</label>
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'gemini', label: 'Google Gemini AI (Free)' },
@@ -423,130 +375,116 @@ export const LeadFinderPage: React.FC = () => {
                 { id: 'overpass', label: 'OpenStreetMap (Overpass)' },
                 { id: 'serpapi', label: 'SerpAPI' },
               ].map((engine) => (
-                <button
+                <Pill
                   key={engine.id}
+                  active={selectedSource === engine.id}
                   onClick={() => setSelectedSource(engine.id)}
-                  className={`pill-luxury ${selectedSource === engine.id ? 'on' : ''}`}
+                  className="text-xs"
                 >
                   {engine.label}
-                </button>
+                </Pill>
               ))}
             </div>
           </div>
 
-          {/* Actions & Launch Buttons */}
+          {/* Launch Buttons */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
+            <Button
+              variant="primary"
               onClick={handleStartSearch}
-              disabled={starting}
-              className="btn-solid text-xs flex items-center gap-2"
+              loading={starting}
+              size="md"
             >
-              {starting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Play className="w-4 h-4 fill-white" />
-              )}
-              <span>{starting ? 'Starting Engine...' : 'Start scraping'}</span>
-            </button>
+              <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
+              <span>Start scraping</span>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
               onClick={() => {
                 fetchKeysStatus();
                 setShowKeysModal(true);
               }}
-              className="btn-ghost text-xs"
+              size="md"
             >
               Hot-reload API vault
-            </button>
+            </Button>
           </div>
 
           {/* Live Progress Bar matching Figma */}
           <div className="pt-2">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-[#525252]">
-                {jobs.length > 0 && jobs[0].status === 'running'
-                  ? `+${jobs[0].statsNew || 0} leads added, ${jobs[0].statsDuplicates || 0} duplicates filtered`
-                  : 'Engine Ready'}
-              </span>
-              <span className="mono font-bold text-black">
-                {jobs.length > 0 && jobs[0].progressTotal > 0
-                  ? `${Math.round((jobs[0].progressDone / jobs[0].progressTotal) * 100)}%`
-                  : '0%'}
-              </span>
-            </div>
-            <div className="w-full bg-[#E5E5E5] rounded-full h-1.5 overflow-hidden mt-2">
-              <div
-                className="bg-black h-1.5 rounded-full transition-all duration-300"
-                style={{
-                  width: `${
-                    jobs.length > 0 && jobs[0].progressTotal > 0
-                      ? Math.round((jobs[0].progressDone / jobs[0].progressTotal) * 100)
-                      : 0
-                  }%`,
-                }}
-              />
-            </div>
+            <Progress
+              value={progressPct}
+              label={
+                topJob && topJob.status === 'running'
+                  ? `+${topJob.statsNew || 0} leads added, ${topJob.statsDuplicates || 0} duplicates filtered`
+                  : 'Engine ready'
+              }
+              statusText={`${progressPct}%`}
+            />
           </div>
         </div>
 
-        {/* Engine Status Card (Span 4) matching Figma */}
+        {/* Engine Failover Monitor Card (Span 4) matching Figma */}
         <div className="lg:col-span-4 card-luxury p-6 flex flex-col justify-between space-y-4">
           <div>
-            <h2 className="serif text-xl font-semibold text-black mb-4">Engine status</h2>
-            <div className="divide-y divide-[#E5E5E5] text-xs">
+            <h2 className="serif text-xl font-semibold text-tx mb-4">Engine status</h2>
+            <div className="divide-y divide-border text-xs">
               <div className="py-3 flex items-center justify-between">
-                <span className="text-[#525252]">Gemini AI</span>
-                <span className="pill-luxury on">Free Active</span>
+                <span className="text-tx-muted">Gemini AI</span>
+                <Pill active className="pointer-events-none text-[11px]">Free active</Pill>
               </div>
               <div className="py-3 flex items-center justify-between">
-                <span className="text-[#525252]">Serper.dev</span>
-                <span className="pill-luxury">Key active</span>
+                <span className="text-tx-muted">Serper.dev</span>
+                <Pill className="pointer-events-none text-[11px]">Key active</Pill>
               </div>
               <div className="py-3 flex items-center justify-between">
-                <span className="text-[#525252]">Overpass</span>
-                <span className="pill-luxury">No key needed</span>
+                <span className="text-tx-muted">Overpass</span>
+                <Pill className="pointer-events-none text-[11px]">No key needed</Pill>
               </div>
               <div className="py-3 flex items-center justify-between">
-                <span className="text-[#525252]">Meta Pixel Scanner</span>
-                <span className="pill-luxury on">Live Integrated</span>
+                <span className="text-tx-muted">Meta Pixel scanner</span>
+                <Pill active className="pointer-events-none text-[11px]">Live integrated</Pill>
               </div>
             </div>
           </div>
 
-          <div className="p-3.5 bg-white border border-[#E5E5E5] rounded-xl text-xs text-[#525252] space-y-1">
-            <div className="font-semibold text-black flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-black" />
-              <span>Meta &amp; Google Ads Scanner</span>
+          <div className="p-3.5 bg-surface-2 border border-border rounded-btn text-xs text-tx-muted space-y-1">
+            <div className="font-semibold text-tx flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-tx" />
+              <span>Multi-provider failover active</span>
             </div>
-            <p className="text-[11px] text-[#737373]">
-              Every scraped website is automatically audited for Meta Pixel, active Ads Library presence, and phone contacts.
+            <p className="text-[11px] text-tx-subtle leading-relaxed">
+              Automatic fallback routes queries across Gemini, Serper and OpenStreetMap to guarantee uninterrupted scraping.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Active & Past Search Jobs Table */}
-      <div className="card-luxury p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
+      {/* Active & Checkpointed Search Jobs List */}
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
           <div>
-            <h2 className="serif text-xl font-semibold text-black">Extraction Jobs &amp; Checkpoints</h2>
-            <p className="text-xs text-[#525252] mt-0.5">
-              Long-running jobs checkpoint every 2km grid cell.
+            <h2 className="serif text-xl font-semibold text-tx">Extraction jobs &amp; checkpoints</h2>
+            <p className="text-xs text-tx-muted mt-0.5">
+              Long-running jobs checkpoint progress every 2km grid cell.
             </p>
           </div>
           <button
             onClick={fetchJobs}
             className="btn-ghost p-2"
             title="Refresh jobs"
+            aria-label="Refresh jobs"
           >
-            <RefreshCw className="w-4 h-4 text-black" />
+            <RefreshCw className="w-4 h-4 text-tx" />
           </button>
         </div>
 
         {jobs.length === 0 ? (
-          <div className="py-12 text-center text-[#737373] text-xs">
-            No search jobs launched yet. Choose a category above and click "Start scraping"!
-          </div>
+          <EmptyState
+            title="No extraction jobs launched yet"
+            description="Choose an area and category above to start scraping verified leads."
+          />
         ) : (
           <div className="space-y-3">
             {jobs.map((job) => {
@@ -556,239 +494,207 @@ export const LeadFinderPage: React.FC = () => {
               return (
                 <div
                   key={job.id}
-                  className="p-4 bg-white border border-[#E5E5E5] rounded-xl space-y-3 shadow-sm"
+                  className="p-4 bg-surface-2 border border-border rounded-btn space-y-3"
                 >
+                  {/* Key Exhaustion / Paused Checkpoint Banner (Monochrome) */}
+                  {isPaused && (
+                    <div className="p-3 bg-surface-1 border border-border rounded-btn text-xs text-tx flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-tx flex-shrink-0" />
+                        <span>{job.pausedReason || 'Quota reached or key rotated. Checkpoint saved.'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            fetchKeysStatus();
+                            setShowKeysModal(true);
+                          }}
+                          size="sm"
+                        >
+                          Hot-swap key
+                        </Button>
+                        <Button
+                          variant="primary"
+                          onClick={() => handleResumeJob(job.id)}
+                          size="sm"
+                        >
+                          Resume search
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="serif font-semibold text-black text-sm">
-                          {job.city || job.country} Lead Search
+                        <span className="serif font-semibold text-tx text-sm">
+                          {job.city || job.country} lead search
                         </span>
-                        <span className="pill-luxury text-[10px]">
+                        <Pill className="text-[10px] pointer-events-none">
                           {job.status}
-                        </span>
+                        </Pill>
                       </div>
-                      <span className="text-xs text-[#737373] mt-0.5 block mono">
+                      <span className="text-xs text-tx-subtle mt-0.5 block mono">
                         Engine: {job.providerId} • Created: {new Date(job.createdAt).toLocaleTimeString()}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <div className="text-xs">
-                        <span className="mono font-bold text-black">+{job.statsNew}</span> new leads
+                        <span className="mono font-bold text-tx">+{job.statsNew}</span> new leads
                       </div>
 
                       {isPaused ? (
-                        <button
+                        <Button
+                          variant="primary"
                           onClick={() => handleResumeJob(job.id)}
-                          className="btn-solid text-xs py-1 px-3"
+                          size="sm"
                         >
                           Resume
-                        </button>
+                        </Button>
                       ) : job.status === 'running' ? (
-                        <button
+                        <Button
+                          variant="ghost"
                           onClick={() => handlePauseJob(job.id)}
-                          className="btn-ghost text-xs py-1 px-3"
+                          size="sm"
                         >
                           Pause
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div>
-                    <div className="flex justify-between text-[11px] text-[#737373] mb-1 mono">
-                      <span>Progress: {percent}%</span>
-                      <span>{job.progressDone} / {job.progressTotal} cells</span>
-                    </div>
-                    <div className="w-full bg-[#E5E5E5] rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="bg-black h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
+                  <Progress
+                    value={percent}
+                    label={`Progress: ${percent}%`}
+                    statusText={`${job.progressDone} / ${job.progressTotal} cells`}
+                  />
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </Card>
+
+      {/* Floating Status Toast */}
+      <Toast message={notice} onClose={() => setNotice(null)} />
 
       {/* Custom Category Creation Modal */}
-      {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
-            <button
+      <Modal
+        isOpen={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        title="Add custom category & keywords"
+        subtitle="Extract targeted B2B businesses in any niche"
+      >
+        {customError && <p className="text-xs text-tx-muted mb-2">{customError}</p>}
+        <form onSubmit={handleCreateCustomCategory} className="space-y-4">
+          <Input
+            label="Category name"
+            required
+            placeholder="e.g. Next.js SaaS Developers, Webflow Agencies"
+            value={customCatName}
+            onChange={(e) => setCustomCatName(e.target.value)}
+          />
+
+          <Textarea
+            label="Target search keywords (Comma-separated)"
+            rows={3}
+            placeholder="e.g. nextjs agency, full stack developer, react studio"
+            value={customCatKeywords}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCustomCatKeywords(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              type="button"
               onClick={() => setShowCustomModal(false)}
-              className="absolute top-5 right-5 text-[#737373] hover:text-black p-1"
+              size="sm"
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
-                <Target className="w-5 h-5 text-black" />
-                Add Custom Category &amp; Keywords
-              </h3>
-              <p className="text-xs text-[#525252] mt-1">
-                Create any niche or web development specialization to extract tailored business leads.
-              </p>
-            </div>
-
-            {customError && (
-              <div className="p-3 bg-white border border-rose-300 rounded-xl text-rose-600 text-xs">
-                {customError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateCustomCategory} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Next.js SaaS Developers, Webflow Studios, Meta Ad Agencies"
-                  value={customCatName}
-                  onChange={(e) => setCustomCatName(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Target Keywords (Comma-separated)
-                </label>
-                <textarea
-                  placeholder="e.g. nextjs agency, full stack developer, react software house, web development firm"
-                  value={customCatKeywords}
-                  onChange={(e) => setCustomCatKeywords(e.target.value)}
-                  rows={3}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#E5E5E5]">
-                <button
-                  type="button"
-                  onClick={() => setShowCustomModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingCustomCat}
-                  className="btn-solid text-xs flex items-center gap-1.5"
-                >
-                  {savingCustomCat ? 'Saving...' : 'Save Category'}
-                </button>
-              </div>
-            </form>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={savingCustomCat}
+              size="sm"
+            >
+              Save category
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* Dynamic API Key Vault Modal matching Figma */}
-      {showKeysModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E5] rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
-            <button
-              onClick={() => setShowKeysModal(false)}
-              className="absolute top-5 right-5 text-[#737373] hover:text-black p-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div>
-              <h3 className="serif text-xl font-bold text-black flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-black" />
-                API vault
-              </h3>
-              <p className="text-xs text-[#525252] mt-0.5">
-                Keys reload in memory immediately without restarting servers.
-              </p>
-            </div>
-
-            {keyNotice && (
-              <div className="p-3 bg-white border border-[#E5E5E5] rounded-xl text-xs text-black flex items-center justify-between">
-                <span>{keyNotice.msg}</span>
-                <button onClick={() => setKeyNotice(null)} className="text-[#737373] hover:text-black">✕</button>
-              </div>
-            )}
-
-            <div className="divide-y divide-[#E5E5E5] text-xs">
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Gemini AI</span>
-                <span className="pill-luxury on">Active</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Serper.dev</span>
-                <span className="pill-luxury on">Active</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">Meta Graph Token</span>
-                <span className="pill-luxury on">Active</span>
-              </div>
-              <div className="py-2.5 flex items-center justify-between">
-                <span className="text-[#525252]">SerpAPI</span>
-                <span className="pill-luxury">Optional</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleQuickAddKey} className="space-y-3 pt-2">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Engine Provider
-                </label>
-                <select
-                  value={newKeyProvider}
-                  onChange={(e) => setNewKeyProvider(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black"
-                >
-                  <option value="gemini">Google Gemini AI</option>
-                  <option value="serper">Serper.dev (Google Maps)</option>
-                  <option value="meta">Meta Graph Access Token</option>
-                  <option value="serpapi">SerpAPI</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#525252] mb-1">
-                  Paste new API key / token
-                </label>
-                <input
-                  type="text"
-                  placeholder="sk-… or EAAV…"
-                  value={newKeyValue}
-                  onChange={(e) => setNewKeyValue(e.target.value)}
-                  className="w-full bg-[#F8F8F8] border border-[#E5E5E5] rounded-xl px-3 py-2 text-xs text-black mono"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowKeysModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingKey || !newKeyValue.trim()}
-                  className="btn-solid text-xs disabled:opacity-50"
-                >
-                  {savingKey ? 'Reloading...' : 'Save and reload'}
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showKeysModal}
+        onClose={() => setShowKeysModal(false)}
+        title="API vault"
+        subtitle="Hot-reloads keys in memory without server restarts"
+        maxWidth="max-w-md"
+      >
+        <div className="divide-y divide-border text-xs">
+          <div className="py-2.5 flex items-center justify-between">
+            <span className="text-tx-muted">Gemini AI</span>
+            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
+          </div>
+          <div className="py-2.5 flex items-center justify-between">
+            <span className="text-tx-muted">Serper.dev</span>
+            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
+          </div>
+          <div className="py-2.5 flex items-center justify-between">
+            <span className="text-tx-muted">Meta Graph Token</span>
+            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
+          </div>
+          <div className="py-2.5 flex items-center justify-between">
+            <span className="text-tx-muted">SerpAPI</span>
+            <Pill className="pointer-events-none text-[11px]">Optional</Pill>
           </div>
         </div>
-      )}
+
+        <form onSubmit={handleQuickAddKey} className="space-y-3 pt-3">
+          <Select
+            label="Engine provider"
+            value={newKeyProvider}
+            onChange={(e) => setNewKeyProvider(e.target.value)}
+          >
+            <option value="gemini">Google Gemini AI</option>
+            <option value="serper">Serper.dev (Google Maps)</option>
+            <option value="meta">Meta Graph Access Token</option>
+            <option value="serpapi">SerpAPI</option>
+          </Select>
+
+          <Input
+            label="Paste new key / token"
+            type="text"
+            placeholder="sk-… or EAAV…"
+            value={newKeyValue}
+            onChange={(e) => setNewKeyValue(e.target.value)}
+            className="mono"
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowKeysModal(false)}
+              size="sm"
+            >
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              loading={savingKey}
+              disabled={!newKeyValue.trim()}
+              size="sm"
+            >
+              Save and reload
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
