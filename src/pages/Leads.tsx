@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
+import { BulkWhatsAppModal } from '../components/whatsapp/BulkWhatsAppModal.js';
+import { WhatsAppConnectModal } from '../components/whatsapp/WhatsAppConnectModal.js';
 import { Card, Table, Thead, Tbody, Tr, Th, Td, Pill, Button, Input, Select, Toast, EmptyState, Skeleton } from '../components/ui/index.js';
 
 export const LeadsPage: React.FC = () => {
@@ -34,6 +36,11 @@ export const LeadsPage: React.FC = () => {
 
   // In-App Ad Inspector State
   const [previewAdLead, setPreviewAdLead] = useState<any | null>(null);
+
+  // Bulk Selection & WhatsApp Campaign State
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [showBulkWhatsAppModal, setShowBulkWhatsAppModal] = useState(false);
+  const [showWhatsAppConnectModal, setShowWhatsAppConnectModal] = useState(false);
 
   const fetchLeads = async () => {
     try {
@@ -135,6 +142,23 @@ export const LeadsPage: React.FC = () => {
       setNotice(`Lead status updated to ${newStatus}`);
     } catch (err: any) {
       setNotice(err.message || 'Status update failed');
+    }
+  };
+
+  const toggleSelectLead = (id: string) => {
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const allOnPageSelected =
+    leads.length > 0 && leads.every((l) => selectedLeadIds.includes(l.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedLeadIds([]);
+    } else {
+      setSelectedLeadIds(leads.map((l) => l.id));
     }
   };
 
@@ -301,6 +325,15 @@ export const LeadsPage: React.FC = () => {
           <Table>
             <Thead>
               <tr>
+                <Th className="w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-border accent-tx cursor-pointer"
+                    title="Select / Deselect all on this page"
+                  />
+                </Th>
                 <Th>Business</Th>
                 <Th>Category</Th>
                 <Th>Location</Th>
@@ -327,6 +360,16 @@ export const LeadsPage: React.FC = () => {
 
                 return (
                   <Tr key={lead.id}>
+                    {/* Checkbox */}
+                    <Td className="w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.includes(lead.id)}
+                        onChange={() => toggleSelectLead(lead.id)}
+                        className="w-4 h-4 rounded border-border accent-tx cursor-pointer"
+                      />
+                    </Td>
+
                     {/* Business */}
                     <Td>
                       <div className="serif font-semibold text-tx text-sm">{lead.name}</div>
@@ -455,6 +498,39 @@ export const LeadsPage: React.FC = () => {
       {/* Floating Status Toast */}
       <Toast message={notice} onClose={() => setNotice(null)} />
 
+      {/* Sticky Bottom Floating Bulk Action Bar */}
+      {selectedLeadIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-surface-1/95 backdrop-blur-md border border-border shadow-card rounded-card px-5 py-3 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-150">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-tx animate-pulse" />
+            <span className="serif font-bold text-tx text-sm">
+              {selectedLeadIds.length} businesses selected
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-border" />
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowBulkWhatsAppModal(true)}
+            >
+              <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+              <span>⚡ Bulk WhatsApp Broadcast</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedLeadIds([])}
+            >
+              Deselect all
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* In-App Live Ad Inspector Modal */}
       {previewAdLead && (
         <AdPreviewModal
@@ -462,6 +538,27 @@ export const LeadsPage: React.FC = () => {
           onClose={() => setPreviewAdLead(null)}
         />
       )}
+
+      {/* Bulk WhatsApp Campaign Modal */}
+      {showBulkWhatsAppModal && (
+        <BulkWhatsAppModal
+          isOpen={showBulkWhatsAppModal}
+          onClose={() => setShowBulkWhatsAppModal(false)}
+          selectedLeads={leads.filter((l) => selectedLeadIds.includes(l.id))}
+          onSuccess={() => {
+            setNotice(`Broadcast dispatched to ${selectedLeadIds.length} businesses!`);
+            setSelectedLeadIds([]);
+            fetchLeads();
+          }}
+          onOpenConnectModal={() => setShowWhatsAppConnectModal(true)}
+        />
+      )}
+
+      {/* WhatsApp Link Device QR Modal */}
+      <WhatsAppConnectModal
+        isOpen={showWhatsAppConnectModal}
+        onClose={() => setShowWhatsAppConnectModal(false)}
+      />
     </div>
   );
 };

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthProvider.js';
-import { LogOut, Menu, ShieldCheck } from 'lucide-react';
+import { LogOut, Menu, ShieldCheck, MessageCircle } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { TwoFactorModal } from '../auth/TwoFactorModal.js';
+import { WhatsAppConnectModal } from '../whatsapp/WhatsAppConnectModal.js';
 import { ThemeToggle } from '../ui/ThemeToggle.js';
+import { api } from '../../api/client.js';
 
 interface TopbarProps {
   onToggleMenu?: () => void;
@@ -12,6 +14,9 @@ interface TopbarProps {
 export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
   const { user, logout } = useAuth();
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [waConnected, setWaConnected] = useState(false);
+  const [waPhone, setWaPhone] = useState<string | null>(null);
   const [clock, setClock] = useState('');
 
   useEffect(() => {
@@ -19,6 +24,17 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    api.get('/whatsapp/status')
+      .then((res: any) => {
+        if (res?.data?.status === 'connected') {
+          setWaConnected(true);
+          setWaPhone(res.data.phone);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const topTabs = [
@@ -96,6 +112,19 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
             {/* Dark / Light Mode Switcher */}
             <ThemeToggle />
 
+            {/* WhatsApp Device Link Pill */}
+            <button
+              onClick={() => setShowWhatsAppModal(true)}
+              title="Link or manage your personal/business WhatsApp"
+              className={`pill-luxury ${waConnected ? 'on' : ''}`}
+            >
+              <MessageCircle className="w-3.5 h-3.5 mr-1.5 inline" />
+              <span className="hidden sm:inline">
+                {waConnected ? `WA: +${waPhone || ''}` : 'Link WhatsApp'}
+              </span>
+              <span className="sm:hidden">WA</span>
+            </button>
+
             {/* 2FA Security Pill */}
             <button
               onClick={() => setShow2FAModal(true)}
@@ -130,6 +159,16 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
 
       {/* 2FA Security Modal */}
       <TwoFactorModal isOpen={show2FAModal} onClose={() => setShow2FAModal(false)} />
+
+      {/* WhatsApp Multi-Device Modal */}
+      <WhatsAppConnectModal
+        isOpen={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        onStatusChange={(st) => {
+          setWaConnected(st.connected);
+          setWaPhone(st.phone || null);
+        }}
+      />
     </>
   );
 };
