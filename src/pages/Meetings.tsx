@@ -14,6 +14,9 @@ import {
   MessageCircle,
   Globe,
   Building,
+  Copy,
+  Users,
+  Zap,
 } from 'lucide-react';
 import {
   Card,
@@ -64,6 +67,8 @@ export const MeetingsPage: React.FC = () => {
 
   // New Meeting Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [meetingTargetType, setMeetingTargetType] = useState<'crm' | 'team'>('crm');
+  const [customParticipantName, setCustomParticipantName] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [title, setTitle] = useState('Discovery & Growth Strategy Session');
   const [startTime, setStartTime] = useState('');
@@ -71,6 +76,7 @@ export const MeetingsPage: React.FC = () => {
   const [customMeetLink, setCustomMeetLink] = useState('');
   const [scheduling, setScheduling] = useState(false);
   const [error, setError] = useState('');
+  const [copiedMeetingId, setCopiedMeetingId] = useState<string | null>(null);
 
   const loadMeetings = async () => {
     setLoading(true);
@@ -110,24 +116,67 @@ export const MeetingsPage: React.FC = () => {
     const offset = tomorrow.getTimezoneOffset() * 60000;
     const localISOTime = new Date(tomorrow.getTime() - offset).toISOString().slice(0, 16);
     setStartTime(localISOTime);
+    setError('');
     setIsModalOpen(true);
+  };
+
+  const handleStartInstantMeeting = async () => {
+    const meetUrl = generateValidMeetUrl();
+    window.open(meetUrl, '_blank');
+    navigator.clipboard?.writeText(meetUrl).catch(() => {});
+    setNotice(`Instant meeting room launched & invite link copied to clipboard! Share on WhatsApp: ${meetUrl}`);
+
+    try {
+      await apiFetch('/meetings', {
+        method: 'POST',
+        body: JSON.stringify({
+          leadId: 'team',
+          title: 'Quick Team & Client Huddle',
+          startTime: new Date().toISOString(),
+          meetLink: meetUrl,
+          notes: 'Instant room launched directly from Meetings panel',
+        }),
+      });
+      loadMeetings();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyInvite = (m: Meeting) => {
+    const text = `Strategy Call: ${m.title}\nTime: ${new Date(m.startTime).toLocaleString()}\nJoin Google Meet: ${m.meetLink || ''}`;
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopiedMeetingId(m.id);
+    setTimeout(() => setCopiedMeetingId(null), 2000);
   };
 
   const handleSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLeadId || !startTime) {
-      setError('Please select a client and meeting time.');
+    if (!startTime) {
+      setError('Please select a meeting time.');
+      return;
+    }
+    if (meetingTargetType === 'crm' && !selectedLeadId) {
+      setError('Please select a business client.');
       return;
     }
     setScheduling(true);
     setError('');
 
     try {
+      const finalTitle =
+        meetingTargetType === 'team' && customParticipantName.trim()
+          ? `${customParticipantName.trim()} — ${title}`
+          : title;
+
       const payload = {
-        leadId: selectedLeadId,
-        title,
+        leadId: meetingTargetType === 'team' ? 'team' : selectedLeadId,
+        title: finalTitle,
         startTime: new Date(startTime).toISOString(),
-        notes,
+        notes:
+          meetingTargetType === 'team' && customParticipantName.trim()
+            ? `Meeting with: ${customParticipantName.trim()}\n${notes}`
+            : notes,
         meetLink: customMeetLink || generateValidMeetUrl(),
       };
 
@@ -138,7 +187,7 @@ export const MeetingsPage: React.FC = () => {
 
       if (res.success) {
         setIsModalOpen(false);
-        setNotice(`Strategy call scheduled with ${res.data.lead?.name || 'client'}!`);
+        setNotice(`Meeting scheduled successfully with Google Meet link!`);
         loadMeetings();
       }
     } catch (err: any) {
@@ -209,6 +258,16 @@ export const MeetingsPage: React.FC = () => {
             title="Refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleStartInstantMeeting}
+            className="border border-border"
+          >
+            <Zap className="w-3.5 h-3.5 mr-1.5 text-tx" />
+            <span>Start Instant Meeting</span>
           </Button>
 
           <Button
@@ -351,20 +410,33 @@ export const MeetingsPage: React.FC = () => {
 
                   <div className="flex items-center gap-2 self-start lg:self-center flex-wrap">
                     {m.meetLink && (
-                      <a
-                        href={m.meetLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button
-                          variant="primary"
-                          size="sm"
+                      <>
+                        <a
+                          href={m.meetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <Video className="w-3.5 h-3.5 mr-1.5" />
-                          <span>Join Google Meet</span>
-                          <ExternalLink className="w-3 h-3 ml-1.5" />
+                          <Button
+                            variant="primary"
+                            size="sm"
+                          >
+                            <Video className="w-3.5 h-3.5 mr-1.5" />
+                            <span>Join Google Meet</span>
+                            <ExternalLink className="w-3 h-3 ml-1.5" />
+                          </Button>
+                        </a>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyInvite(m)}
+                          className="border border-border"
+                          title="Copy meeting link & details"
+                        >
+                          <Copy className="w-3.5 h-3.5 mr-1" />
+                          <span>{copiedMeetingId === m.id ? 'Copied!' : 'Copy Invite'}</span>
                         </Button>
-                      </a>
+                      </>
                     )}
 
                     {m.status === 'scheduled' && (
@@ -410,34 +482,83 @@ export const MeetingsPage: React.FC = () => {
         )}
 
         <form onSubmit={handleSchedule} className="space-y-4">
+          {/* Target Type Selector */}
           <div>
             <label className="block text-xs font-medium text-tx-muted mb-1.5">
-              Select Business Client *
+              Meeting Category
             </label>
-            {availableLeads.length > 0 ? (
-              <select
-                value={selectedLeadId}
-                onChange={(e) => setSelectedLeadId(e.target.value)}
-                className="input-luxury text-xs cursor-pointer font-medium"
-                required
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMeetingTargetType('crm')}
+                className={`text-xs py-2 px-3 rounded-btn border text-center transition flex items-center justify-center gap-1.5 ${
+                  meetingTargetType === 'crm'
+                    ? 'bg-tx text-canvas font-semibold border-tx'
+                    : 'bg-surface-2 hover:bg-surface-1 border-border text-tx-muted hover:text-tx'
+                }`}
               >
-                {availableLeads.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} — {l.city}, {l.country}
-                  </option>
-                ))}
-              </select>
-            ) : (
+                <Building className="w-3.5 h-3.5" />
+                <span>CRM Client</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingTargetType('team')}
+                className={`text-xs py-2 px-3 rounded-btn border text-center transition flex items-center justify-center gap-1.5 ${
+                  meetingTargetType === 'team'
+                    ? 'bg-tx text-canvas font-semibold border-tx'
+                    : 'bg-surface-2 hover:bg-surface-1 border-border text-tx-muted hover:text-tx'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Team / Own People</span>
+              </button>
+            </div>
+          </div>
+
+          {meetingTargetType === 'crm' ? (
+            <div>
+              <label className="block text-xs font-medium text-tx-muted mb-1.5">
+                Select Business Client *
+              </label>
+              {availableLeads.length > 0 ? (
+                <select
+                  value={selectedLeadId}
+                  onChange={(e) => setSelectedLeadId(e.target.value)}
+                  className="input-luxury text-xs cursor-pointer font-medium"
+                  required
+                >
+                  {availableLeads.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} — {l.city}, {l.country}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Enter Client or Lead ID"
+                  value={selectedLeadId}
+                  onChange={(e) => setSelectedLeadId(e.target.value)}
+                  className="input-luxury text-xs font-mono"
+                  required
+                />
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-medium text-tx-muted mb-1.5">
+                Team Member / Participant Name *
+              </label>
               <input
                 type="text"
-                placeholder="Enter Lead ID"
-                value={selectedLeadId}
-                onChange={(e) => setSelectedLeadId(e.target.value)}
-                className="input-luxury text-xs font-mono"
+                placeholder="e.g. Ali (Developer), Internal Agency Sync, or Client Name"
+                value={customParticipantName}
+                onChange={(e) => setCustomParticipantName(e.target.value)}
+                className="input-luxury text-xs font-medium"
                 required
               />
-            )}
-          </div>
+            </div>
+          )}
 
           <Input
             label="Meeting Topic / Headline"

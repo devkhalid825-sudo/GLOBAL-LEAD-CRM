@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Copy,
   CheckCircle2,
+  AlertTriangle,
   Languages,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
@@ -54,6 +55,17 @@ export const LeadDetailPage: React.FC = () => {
   const [emailBody, setEmailBody] = useState('');
   const [submittingEmail, setSubmittingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [emailDeliveryStatus, setEmailDeliveryStatus] = useState<{
+    open: boolean;
+    success: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    success: false,
+    title: '',
+    message: '',
+  });
 
   // Website email scraper state
   const [isScrapingEmail, setIsScrapingEmail] = useState(false);
@@ -291,7 +303,7 @@ export const LeadDetailPage: React.FC = () => {
     setEmailError('');
 
     try {
-      await api.post('/emails/send', {
+      const res: any = await api.post('/emails/send', {
         leadId: id,
         to: emailTo.trim(),
         subject: emailSubject.trim(),
@@ -299,10 +311,31 @@ export const LeadDetailPage: React.FC = () => {
         bodyHtml: `<p>${emailBody.replace(/\n/g, '<br/>')}</p>`,
       });
       setShowEmailModal(false);
+      const sentTo = emailTo.trim();
       setEmailSubject('');
       setEmailBody('');
       fetchLeadData();
-      setNotice('Outreach email dispatched');
+
+      const delivered = res?.data?.delivered ?? res?.delivered;
+      const noticeMsg = res?.data?.deliveryNotice ?? res?.deliveryNotice;
+
+      if (delivered) {
+        setEmailDeliveryStatus({
+          open: true,
+          success: true,
+          title: 'Email Sent to Client Inbox! 🚀',
+          message: `Official cold outreach email successfully dispatched to ${sentTo} via Brevo SMTP API.`,
+        });
+      } else {
+        setEmailDeliveryStatus({
+          open: true,
+          success: false,
+          title: 'Email Saved in CRM (Not Sent to Inbox) ⚠️',
+          message:
+            noticeMsg ||
+            'No external Brevo API key was active on server. The email is recorded in CRM timeline, but was not sent to the real external inbox. Please add your Brevo key in Admin Console.',
+        });
+      }
     } catch (err: any) {
       setEmailError(err.message || 'Failed to dispatch email');
     } finally {
@@ -978,6 +1011,55 @@ export const LeadDetailPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Email Delivery Outcome Alert Modal */}
+      <Modal
+        isOpen={emailDeliveryStatus.open}
+        onClose={() => setEmailDeliveryStatus({ ...emailDeliveryStatus, open: false })}
+        title={emailDeliveryStatus.title}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-2 border border-border">
+            {emailDeliveryStatus.success ? (
+              <CheckCircle2 className="w-6 h-6 text-tx flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-6 h-6 text-tx-muted flex-shrink-0 mt-0.5" />
+            )}
+            <div className="space-y-1 text-xs">
+              <p className="text-tx font-medium leading-relaxed">
+                {emailDeliveryStatus.message}
+              </p>
+              {!emailDeliveryStatus.success && (
+                <p className="text-[11px] text-tx-subtle mt-1">
+                  Tip: Go to <strong>Admin Console &gt; Integrations</strong> to add your active Brevo API key (`xkeysib-...`), or add `BREVO_API_KEY` in your VPS `.env`.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            {!emailDeliveryStatus.success && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEmailDeliveryStatus({ ...emailDeliveryStatus, open: false });
+                  window.location.href = '/console/integrations';
+                }}
+              >
+                Go to Integrations
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setEmailDeliveryStatus({ ...emailDeliveryStatus, open: false })}
+            >
+              Understood
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

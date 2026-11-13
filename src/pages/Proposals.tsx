@@ -47,6 +47,7 @@ export const ProposalsPage: React.FC = () => {
 
   // New Proposal Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableLeads, setAvailableLeads] = useState<any[]>([]);
   const [leadId, setLeadId] = useState('');
   const [title, setTitle] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -70,8 +71,22 @@ export const ProposalsPage: React.FC = () => {
     }
   };
 
+  const loadLeadsForSelection = async () => {
+    try {
+      const res = await apiFetch<any>('/leads?limit=50');
+      const list = res?.items || (Array.isArray(res?.data) ? res.data : []);
+      setAvailableLeads(list);
+      if (list.length > 0 && !leadId) {
+        setLeadId(list[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load leads for proposals:', err);
+    }
+  };
+
   useEffect(() => {
     loadProposals();
+    loadLeadsForSelection();
   }, []);
 
   const handleCopyLink = (token: string) => {
@@ -232,8 +247,8 @@ export const ProposalsPage: React.FC = () => {
                         </p>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-tx">
-                      {prop.leadId.slice(0, 8)}...
+                    <td className="py-3.5 px-4 text-xs font-medium text-tx">
+                      {availableLeads.find((l) => l.id === prop.leadId)?.name || `${prop.leadId.slice(0, 8)}...`}
                     </td>
                     <td className="py-3.5 px-4 text-center font-bold text-tx font-mono text-xs">
                       {prop.currency} {prop.totalAmount.toLocaleString()}
@@ -295,14 +310,32 @@ export const ProposalsPage: React.FC = () => {
         <form onSubmit={handleCreateProposal} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
-              <Input
-                label="Target Lead ID *"
-                placeholder="Enter Lead ID (UUID)"
-                value={leadId}
-                onChange={(e) => setLeadId(e.target.value)}
-                className="font-mono text-xs"
-                required
-              />
+              <label className="block text-xs font-medium text-tx-muted mb-1.5">
+                Target Business Client *
+              </label>
+              {availableLeads.length > 0 ? (
+                <select
+                  value={leadId}
+                  onChange={(e) => setLeadId(e.target.value)}
+                  className="input-luxury text-xs cursor-pointer font-medium"
+                  required
+                >
+                  {availableLeads.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} — {l.city || 'Local'}, {l.country || 'Global'}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Enter Client or Lead ID"
+                  value={leadId}
+                  onChange={(e) => setLeadId(e.target.value)}
+                  className="input-luxury text-xs font-mono"
+                  required
+                />
+              )}
             </div>
             <div className="flex items-end">
               <Button
