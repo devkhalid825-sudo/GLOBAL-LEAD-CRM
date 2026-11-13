@@ -1,0 +1,7 @@
+# Global Lead CRM - Robots.txt
+User-agent: *
+Allow: /
+Disallow: /console/
+Disallow: /api/
+
+Sitemap: https://globalcrm.io/sitemap.xml
