@@ -205,6 +205,30 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
           </div>
         )}
 
+        {/* CONNECTING BUT WAITING FOR QR TO ARRIVE */}
+        {status === 'connecting' && !qrCodeUrl && (
+          <div className="py-10 text-center space-y-4">
+            <div className="w-12 h-12 border-2 border-tx border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="space-y-1">
+              <span className="serif text-sm font-semibold text-tx block">
+                Generating WhatsApp Pairing QR Code...
+              </span>
+              <p className="text-xs text-tx-muted leading-relaxed max-w-sm mx-auto">
+                Opening secure handshake with WhatsApp gateway. QR code will appear in 3–5 seconds.
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <Button variant="ghost" onClick={handleStartConnect} size="sm">
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                <span>Retry</span>
+              </Button>
+              <Button variant="ghost" onClick={onClose} size="sm">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* DISCONNECTED INITIAL STATE */}
         {status === 'disconnected' && (
           <div className="space-y-5 py-2">
