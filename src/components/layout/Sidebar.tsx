@@ -17,6 +17,7 @@ import {
   FileCheck2,
   UserCog,
   Activity,
+  Send,
   X,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Lead finder', to: '/finder', icon: Compass, badge: 'Grid 2km' },
     { label: 'Leads directory', to: '/leads', icon: Users, badge: 'Meta' },
+    { label: 'Applied leads', to: '/leads?status=contacted_all', icon: Send, badge: 'Pipeline' },
     { label: 'Meetings & calls', to: '/meetings', icon: Calendar, badge: 'Meet' },
     { label: 'Proposals & deals', to: '/proposals', icon: FileText },
     { label: 'Unified inbox', to: '/inbox', icon: Inbox },

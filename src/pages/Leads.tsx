@@ -10,6 +10,8 @@ import {
   Sparkles,
   RefreshCw,
   Eye,
+  Mail,
+  Send,
   SlidersHorizontal,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
@@ -25,7 +27,8 @@ export const LeadsPage: React.FC = () => {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const initialStatus = new URLSearchParams(window.location.search).get('status') || 'all';
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [metaFilter, setMetaFilter] = useState<'all' | 'meta' | 'ads' | 'nopixel'>('all');
   const [page, setPage] = useState(1);
 
@@ -41,6 +44,34 @@ export const LeadsPage: React.FC = () => {
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [showBulkWhatsAppModal, setShowBulkWhatsAppModal] = useState(false);
   const [showWhatsAppConnectModal, setShowWhatsAppConnectModal] = useState(false);
+
+  const handleWhatsAppClick = async (lead: any, phone: string) => {
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+      `Hi ${lead.name}, I noticed your business in ${lead.city} and would love to connect regarding web systems and scaling.`
+    )}`;
+    window.open(waUrl, '_blank');
+
+    try {
+      await api.post(`/leads/${lead.id}/mark-contacted`, { channel: 'whatsapp' });
+      // Update local state immediately
+      setLeads((prev) =>
+        prev.map((l) => {
+          if (l.id === lead.id) {
+            const currentTags = Array.isArray(l.tags) ? (l.tags as string[]) : [];
+            const tags = Array.from(new Set([...currentTags, 'WhatsApp Sent']));
+            const newStatus =
+              l.status === 'contacted_email' || l.status === 'contacted_both'
+                ? 'contacted_both'
+                : 'contacted_whatsapp';
+            return { ...l, status: newStatus, tags };
+          }
+          return l;
+        })
+      );
+      setNotice(`"${lead.name}" marked as WhatsApp Contacted.`);
+    } catch {}
+  };
 
   const fetchLeads = async () => {
     try {
@@ -210,8 +241,90 @@ export const LeadsPage: React.FC = () => {
 
       {/* Filter and Search Bar matching Figma pills */}
       <Card className="p-4 sm:p-5 space-y-4">
-        {/* Quick Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        {/* Primary Outreach & Pipeline Stage Pills */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] mono text-tx-subtle uppercase tracking-wider font-semibold">
+              Outreach &amp; Application Pipeline:
+            </span>
+            <span className="text-[11px] mono text-tx-muted">{total} Total Leads</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <Pill
+              active={statusFilter === 'all'}
+              onClick={() => {
+                setStatusFilter('all');
+                setPage(1);
+              }}
+            >
+              All leads ({total})
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'uncontacted' || statusFilter === 'new'}
+              onClick={() => {
+                setStatusFilter('uncontacted');
+                setPage(1);
+              }}
+            >
+              ○ Fresh / Uncontacted
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'contacted_whatsapp'}
+              onClick={() => {
+                setStatusFilter('contacted_whatsapp');
+                setPage(1);
+              }}
+            >
+              💬 WhatsApp Applied
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'contacted_email'}
+              onClick={() => {
+                setStatusFilter('contacted_email');
+                setPage(1);
+              }}
+            >
+              ✉️ Email Applied
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'contacted_all'}
+              onClick={() => {
+                setStatusFilter('contacted_all');
+                setPage(1);
+              }}
+            >
+              🚀 All Applied (WA + Email)
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'meeting'}
+              onClick={() => {
+                setStatusFilter('meeting');
+                setPage(1);
+              }}
+            >
+              📅 Meetings Scheduled
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'proposal'}
+              onClick={() => {
+                setStatusFilter('proposal');
+                setPage(1);
+              }}
+            >
+              📄 Proposals Sent
+            </Pill>
+          </div>
+        </div>
+
+        {/* Secondary Tech Diagnostic Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-border text-xs">
+          <span className="text-[10px] mono text-tx-subtle uppercase tracking-wider mr-1">Tech Audit:</span>
           <Pill
             active={metaFilter === 'all'}
             onClick={() => {
@@ -219,7 +332,7 @@ export const LeadsPage: React.FC = () => {
               setPage(1);
             }}
           >
-            All leads ({total})
+            All Tech
           </Pill>
 
           <Pill
@@ -277,9 +390,10 @@ export const LeadsPage: React.FC = () => {
               className="input-luxury text-xs py-2 px-3 w-full sm:w-auto font-medium"
             >
               <option value="all">Pipeline: All stages</option>
-              <option value="new">New lead</option>
-              <option value="contacted">Contacted</option>
-              <option value="interested">Interested</option>
+              <option value="uncontacted">Fresh / Uncontacted</option>
+              <option value="contacted_whatsapp">WhatsApp Applied</option>
+              <option value="contacted_email">Email Applied</option>
+              <option value="contacted_all">All Contacted (Applied)</option>
               <option value="meeting">Meeting scheduled</option>
               <option value="proposal">Proposal sent</option>
               <option value="won">Won / closed</option>
@@ -339,6 +453,7 @@ export const LeadsPage: React.FC = () => {
                 <Th>Location</Th>
                 <Th>Rating</Th>
                 <Th>Phone</Th>
+                <Th>Outreach Status</Th>
                 <Th>WhatsApp</Th>
                 <Th>Pixel</Th>
                 <Th className="text-right">Actions</Th>
@@ -348,15 +463,12 @@ export const LeadsPage: React.FC = () => {
               {leads.map((lead) => {
                 const phone = lead.phoneNorm || (lead.phones && lead.phones[0]);
                 const cleanPhone = phone ? phone.replace(/[^\d]/g, '') : null;
-                const waLink = cleanPhone
-                  ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                      `Hi ${lead.name}, I noticed your business in ${lead.city} and would love to connect regarding web systems and scaling.`
-                    )}`
-                  : null;
                 const tags = Array.isArray(lead.tags) ? (lead.tags as string[]) : [];
                 const isMetaIntegrated = tags.includes('Meta Integrated') || tags.includes('Meta Pixel Active') || lead.adsInfo?.pixelDetected;
                 const isAdsRunning = tags.includes('Meta Ads Active') || lead.adsInfo?.running;
                 const adLibraryUrl = lead.adsInfo?.adLibraryUrl || `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&q=${encodeURIComponent(lead.name)}`;
+                const isWhatsAppContacted = tags.includes('WhatsApp Sent') || lead.status === 'contacted_whatsapp' || lead.status === 'contacted_both';
+                const isEmailContacted = tags.includes('Email Sent') || lead.status === 'contacted_email' || lead.status === 'contacted_both';
 
                 return (
                   <Tr key={lead.id}>
@@ -414,25 +526,52 @@ export const LeadsPage: React.FC = () => {
                       )}
                     </Td>
 
+                    {/* Outreach Status */}
+                    <Td>
+                      {isWhatsAppContacted && isEmailContacted ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx inline-flex items-center gap-1">
+                          <MessageCircle className="w-2.5 h-2.5" />
+                          <span>WA</span>
+                          <span>+</span>
+                          <Mail className="w-2.5 h-2.5" />
+                          <span>Email</span>
+                        </span>
+                      ) : isWhatsAppContacted ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx inline-flex items-center gap-1">
+                          <MessageCircle className="w-2.5 h-2.5" />
+                          <span>WA Applied</span>
+                        </span>
+                      ) : isEmailContacted ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx inline-flex items-center gap-1">
+                          <Mail className="w-2.5 h-2.5" />
+                          <span>Email Applied</span>
+                        </span>
+                      ) : lead.status === 'meeting' ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx">
+                          📅 Meeting
+                        </span>
+                      ) : lead.status === 'proposal' ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx">
+                          📄 Proposal
+                        </span>
+                      ) : (
+                        <span className="text-[10px] mono text-tx-subtle">
+                          ○ Fresh
+                        </span>
+                      )}
+                    </Td>
+
                     {/* WhatsApp */}
                     <Td>
-                      {waLink ? (
-                        <a
-                          href={waLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            api.post(`/leads/${lead.id}/timeline`, {
-                              type: 'whatsapp',
-                              payload: { message: `Initiated WhatsApp outreach with ${phone}` },
-                            }).catch(() => {});
-                          }}
-                          className="pill-luxury on text-[11px] inline-flex items-center gap-1"
-                          title="Open WhatsApp chat"
+                      {cleanPhone ? (
+                        <button
+                          onClick={() => handleWhatsAppClick(lead, phone!)}
+                          className="pill-luxury on text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                          title="Open WhatsApp chat and track as contacted"
                         >
                           <MessageCircle className="w-3 h-3" />
                           <span>WhatsApp</span>
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-tx-subtle text-[11px]">—</span>
                       )}

@@ -41,22 +41,21 @@ const FALLBACK_COUNTRIES: CountryItem[] = [
 ];
 
 const FALLBACK_CATEGORIES: CategoryItem[] = [
-  { id: 'cat_webdev', name: 'Website development (Next.js, WordPress, Web Apps)' },
-  { id: 'cat_meta_ecom', name: 'Meta integrated e-commerce brands (Meta Ads & Pixel)' },
-  { id: 'cat_meta_ads', name: 'Meta advertisers & D2C brands (Active Facebook/Instagram Ads)' },
-  { id: 'cat_shopify', name: 'Shopify & headless e-commerce development' },
-  { id: 'cat_landing', name: 'Webflow, Framer & high-converting landing pages' },
-  { id: 'cat_crm', name: 'Custom CRM, ERP & SaaS web applications' },
-  { id: 'cat_appdev', name: 'Mobile app development (iOS, Android, Flutter)' },
-  { id: 'cat_video', name: 'AI video ads, UGC & explainer video production' },
-  { id: 'cat_aicontent', name: 'AI content & commercial product photography' },
-  { id: 'cat_seo', name: 'SEO & Google Search ranking services' },
-  { id: 'cat_speed', name: 'Website speed optimization & security hardening' },
-  { id: 'cat_remote_staff', name: 'Remote staff augmentation & dedicated developers' },
-  { id: 'cat_it', name: 'Digital agencies & full-service IT houses' },
-  { id: 'cat_realestate', name: 'Real estate & property developers' },
-  { id: 'cat_clinics', name: 'High-ticket aesthetic & dental clinics' },
-  { id: 'cat_restaurants', name: 'Restaurants, cafes & retail brands' },
+  // 1. High-Paying Client Niches (Real Buyers who need Websites, Ads & Apps)
+  { id: 'cat_realestate', name: '🏢 Real estate brokers & property developers (High-Ticket Buyers)' },
+  { id: 'cat_clinics', name: '🦷 Aesthetic, dermatology & dental clinics (High-Intent Bookings)' },
+  { id: 'cat_lawyers', name: '⚖️ Corporate law firms & legal consultants (High Budget)' },
+  { id: 'cat_luxury_cars', name: '🚗 Luxury car rentals & exotic auto showrooms (Booking Systems)' },
+  { id: 'cat_solar_contractors', name: '☀️ Solar energy & home renovation contractors (Lead Funnels)' },
+  { id: 'cat_interior_design', name: '🛋️ Interior design & architecture firms (Portfolio Websites)' },
+  { id: 'cat_ecommerce_brands', name: '🛍️ Retail, jewellery & fashion e-commerce brands (Shopify & Meta Ads)' },
+  { id: 'cat_restaurants', name: '🍽️ Restaurants, cafes & luxury hospitality (Menus & Local SEO)' },
+  { id: 'cat_accounting', name: '💼 Accounting, audit & financial advisory firms (Corporate Portals)' },
+
+  // 2. White-label & Agency Partner Niches
+  { id: 'cat_remote_staff', name: '👥 Foreign agencies seeking remote staff / dedicated developers' },
+  { id: 'cat_it', name: '💻 Digital marketing agencies (White-label dev partner)' },
+  { id: 'cat_webdev', name: '🌐 Web development agencies & software houses' },
 ];
 
 const FALLBACK_CITIES: Record<string, CityItem[]> = {
