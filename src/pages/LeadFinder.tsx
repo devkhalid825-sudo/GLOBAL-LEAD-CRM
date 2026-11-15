@@ -380,9 +380,11 @@ export const LeadFinderPage: React.FC = () => {
             <label className="text-xs text-tx-muted block font-medium">Scraping engine</label>
             <div className="flex flex-wrap gap-2">
               {[
-                { id: 'gemini', label: 'Google Gemini AI (Free)' },
+                { id: 'geoapify', label: 'Geoapify (3,000/day Free)' },
                 { id: 'serper', label: 'Serper.dev (Google Maps)' },
-                { id: 'overpass', label: 'OpenStreetMap (Overpass)' },
+                { id: 'overpass', label: 'OpenStreetMap (100% Free)' },
+                { id: 'apify', label: 'Apify Maps Scraper' },
+                { id: 'gemini', label: 'Google Gemini AI (Free)' },
                 { id: 'serpapi', label: 'SerpAPI' },
               ].map((engine) => (
                 <Pill
@@ -678,8 +680,10 @@ export const LeadFinderPage: React.FC = () => {
             value={newKeyProvider}
             onChange={(e) => setNewKeyProvider(e.target.value)}
           >
-            <option value="gemini">Google Gemini AI</option>
+            <option value="geoapify">Geoapify Places (3,000/day Free)</option>
+            <option value="apify">Apify Maps Scraper ($5 Free)</option>
             <option value="serper">Serper.dev (Google Maps)</option>
+            <option value="gemini">Google Gemini AI</option>
             <option value="meta">Meta Graph Access Token</option>
             <option value="serpapi">SerpAPI</option>
           </Select>
