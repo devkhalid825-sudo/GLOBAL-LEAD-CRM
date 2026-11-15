@@ -11,6 +11,7 @@ import {
   Target,
   Zap,
   KeyRound,
+  Trash2,
 } from 'lucide-react';
 import { Card, Button, Input, Select, Textarea, Slider, Pill, Modal, Progress, Toast, EmptyState, Skeleton } from '../components/ui/index.js';
 
@@ -172,6 +173,16 @@ export const LeadFinderPage: React.FC = () => {
       setKeysStatus(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      await api.delete(`/finder/jobs/${jobId}`);
+      setJobs((prev) => prev.filter((j) => j.id !== jobId));
+      setNotice('Search job deleted.');
+    } catch (err: any) {
+      setNotice(`Failed to delete job: ${err.message}`);
     }
   };
 
@@ -561,6 +572,15 @@ export const LeadFinderPage: React.FC = () => {
                           Pause
                         </Button>
                       ) : null}
+
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="btn-ghost text-xs p-1.5 text-tx-subtle hover:text-tx hover:border-tx rounded flex items-center gap-1"
+                        title="Delete search job"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </button>
                     </div>
                   </div>
 
