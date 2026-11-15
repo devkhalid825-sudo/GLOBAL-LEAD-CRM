@@ -53,17 +53,18 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
     try {
       if (!silent) setLoading(true);
       const res: any = await api.get('/whatsapp/status');
-      if (res?.data) {
-        setStatus(res.data.status);
-        setPhone(res.data.phone || null);
-        setName(res.data.name || null);
-        if (res.data.qrCodeUrl) {
-          setQrCodeUrl(res.data.qrCodeUrl);
+      const payload = res?.data !== undefined ? res.data : res;
+      if (payload) {
+        if (payload.status) setStatus(payload.status);
+        setPhone(payload.phone || null);
+        setName(payload.name || null);
+        if (payload.qrCodeUrl) {
+          setQrCodeUrl(payload.qrCodeUrl);
         }
         if (onStatusChange) {
           onStatusChange({
-            connected: res.data.status === 'connected',
-            phone: res.data.phone || null,
+            connected: payload.status === 'connected',
+            phone: payload.phone || null,
           });
         }
       }
@@ -77,18 +78,21 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
   const handleStartConnect = async () => {
     setError(null);
     setLoading(true);
+    setStatus('connecting'); // Immediately switch modal to connecting / loading state
     try {
       const res: any = await api.post('/whatsapp/connect', {});
-      if (res?.data) {
-        setStatus(res.data.status);
-        setQrCodeUrl(res.data.qrCodeUrl || null);
-        if (res.data.status === 'connected') {
-          setPhone(res.data.phone);
-          if (onStatusChange) onStatusChange({ connected: true, phone: res.data.phone });
+      const payload = res?.data !== undefined ? res.data : res;
+      if (payload) {
+        if (payload.status) setStatus(payload.status);
+        if (payload.qrCodeUrl) setQrCodeUrl(payload.qrCodeUrl);
+        if (payload.status === 'connected') {
+          setPhone(payload.phone || null);
+          if (onStatusChange) onStatusChange({ connected: true, phone: payload.phone });
         }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to initialize WhatsApp session');
+      setStatus('disconnected');
     } finally {
       setLoading(false);
     }
