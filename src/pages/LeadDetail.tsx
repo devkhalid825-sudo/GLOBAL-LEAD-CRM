@@ -362,12 +362,15 @@ export const LeadDetailPage: React.FC = () => {
     if (!id) return;
     setIsScrapingEmail(true);
     try {
-      const res = await api.post<any>(`/leads/${id}/scrape-email`, {});
-      if (res.found > 0) {
-        setNotice(`Discovered ${res.found} email(s): ${res.emails.join(', ')}`);
+      const res = await api.post<any>(`/leads/${id}/extract-contacts`, {});
+      const parts = [];
+      if (res.whatsAppFound > 0) parts.push(`${res.whatsAppFound} WhatsApp (${res.whatsApp.join(', ')})`);
+      if (res.emailsFound > 0) parts.push(`${res.emailsFound} email(s) (${res.emails.join(', ')})`);
+      if (parts.length > 0) {
+        setNotice(`Extracted: ${parts.join(' | ')}`);
         fetchLeadData();
       } else {
-        setNotice('No public email found on the website or /contact page.');
+        setNotice('No direct WhatsApp or email found on public website pages.');
       }
     } catch (err: any) {
       setNotice(`Extraction failed: ${err.message || 'Unknown error'}`);
@@ -475,8 +478,15 @@ export const LeadDetailPage: React.FC = () => {
               <h2 className="serif text-xl font-semibold text-tx mb-3">Business intel</h2>
               <div className="divide-y divide-border text-xs">
                 <div className="py-2.5 flex items-center justify-between">
-                  <span className="text-tx-muted">Phone</span>
-                  <span className="mono text-tx font-medium">{phone || '—'}</span>
+                  <span className="text-tx-muted">Phone / WA</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="mono text-tx font-medium">{phone || '—'}</span>
+                    {lead.tags?.includes('Verified WhatsApp') && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold" title="WhatsApp Verified from website">
+                        WA ✓
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="py-2.5 flex items-center justify-between">
                   <span className="text-tx-muted">Email</span>
@@ -487,13 +497,13 @@ export const LeadDetailPage: React.FC = () => {
                         type="button"
                         onClick={handleScrapeEmail}
                         disabled={isScrapingEmail}
-                        className="btn-ghost text-[10px] py-0.5 px-2 rounded-btn border border-border flex items-center gap-1"
-                        title="Extract public contact emails from business website"
+                        className="btn-ghost text-[10px] py-0.5 px-2 rounded-btn border border-border flex items-center gap-1 text-emerald-600 font-medium hover:bg-emerald-500/10"
+                        title="Extract direct WhatsApp numbers and emails from business website"
                       >
                         {isScrapingEmail ? (
-                          <div className="w-2.5 h-2.5 border border-tx border-t-transparent rounded-full animate-spin" />
+                          <div className="w-2.5 h-2.5 border border-emerald-600 border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <span>Extract</span>
+                          <span>Extract WA &amp; Email</span>
                         )}
                       </button>
                     )}

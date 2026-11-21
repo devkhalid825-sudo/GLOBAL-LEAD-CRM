@@ -17,6 +17,8 @@ import {
   Play,
   PauseCircle,
   PlayCircle,
+  QrCode,
+  CheckCircle2,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
 import { BulkWhatsAppModal } from '../components/whatsapp/BulkWhatsAppModal.js';
@@ -34,11 +36,14 @@ export const LeadsPage: React.FC = () => {
   const initialStatus = new URLSearchParams(window.location.search).get('status') || 'all';
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [metaFilter, setMetaFilter] = useState<'all' | 'meta' | 'ads' | 'nopixel'>('all');
+  const [contactChannelFilter, setContactChannelFilter] = useState<'all' | 'has_whatsapp' | 'has_email' | 'both'>('all');
   const [page, setPage] = useState(1);
 
   // Action notices & spinners
   const [scanningMeta, setScanningMeta] = useState(false);
   const [seedingTestData, setSeedingTestData] = useState(false);
+  const [extractingContacts, setExtractingContacts] = useState(false);
+  const [extractingLeadId, setExtractingLeadId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   // In-App Ad Inspector State
@@ -116,6 +121,14 @@ export const LeadsPage: React.FC = () => {
         query += '&tag=Missing Meta Pixel';
       }
 
+      if (contactChannelFilter === 'has_whatsapp') {
+        query += '&hasWhatsApp=true';
+      } else if (contactChannelFilter === 'has_email') {
+        query += '&hasEmail=true';
+      } else if (contactChannelFilter === 'both') {
+        query += '&bothChannels=true';
+      }
+
       const res = await api.get<any>(query);
       const items = res?.items || (Array.isArray(res?.data) ? res.data : []);
       const totalCount = res?.total || items.length;
@@ -130,7 +143,43 @@ export const LeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [page, statusFilter, metaFilter]);
+  }, [page, statusFilter, metaFilter, contactChannelFilter]);
+
+  const handleExtractContactsAll = async () => {
+    try {
+      setExtractingContacts(true);
+      setNotice('Deep scanning websites to extract verified WhatsApp numbers and emails...');
+      const res = await api.post<any>('/leads/extract-contacts-all', { limit: 50 });
+      setNotice(
+        `Extraction complete! Checked ${res.scanned || 0} leads: found ${res.whatsAppFound || 0} WhatsApp numbers and ${res.emailsFound || 0} emails.`
+      );
+      fetchLeads();
+    } catch (err: any) {
+      setNotice(`Extraction failed: ${err.message}`);
+    } finally {
+      setExtractingContacts(false);
+    }
+  };
+
+  const handleExtractSingleLead = async (leadId: string) => {
+    try {
+      setExtractingLeadId(leadId);
+      const res = await api.post<any>(`/leads/${leadId}/extract-contacts`, {});
+      const parts = [];
+      if (res.whatsAppFound > 0) parts.push(`${res.whatsAppFound} WhatsApp: ${res.whatsApp.join(', ')}`);
+      if (res.emailsFound > 0) parts.push(`${res.emailsFound} email(s): ${res.emails.join(', ')}`);
+      if (parts.length > 0) {
+        setNotice(`Found: ${parts.join(' | ')}`);
+        fetchLeads();
+      } else {
+        setNotice('No direct WhatsApp or email found on public website pages.');
+      }
+    } catch (err: any) {
+      setNotice(`Extraction failed: ${err.message}`);
+    } finally {
+      setExtractingLeadId(null);
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +285,29 @@ export const LeadsPage: React.FC = () => {
 
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          <Button
+            variant="primary"
+            onClick={handleExtractContactsAll}
+            loading={extractingContacts}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+            title="Deep scrape business websites for verified WhatsApp numbers and emails"
+          >
+            <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+            <span>🔍 Deep Extract WhatsApp &amp; Emails</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => setShowWhatsAppConnectModal(true)}
+            size="sm"
+            className="border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+            title="Scan QR or enter 8-digit Pairing Code to link WhatsApp device"
+          >
+            <QrCode className="w-3.5 h-3.5 mr-1.5" />
+            <span>Link WhatsApp</span>
+          </Button>
+
           <Button
             variant="primary"
             onClick={handleSeedTestData}
@@ -368,6 +440,50 @@ export const LeadsPage: React.FC = () => {
               🔥 Hot / Interested
             </Pill>
           </div>
+        </div>
+
+        {/* Contact Channel Readiness Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-border text-xs">
+          <span className="text-[10px] mono text-tx-subtle uppercase tracking-wider mr-1">Direct Reach:</span>
+          <Pill
+            active={contactChannelFilter === 'all'}
+            onClick={() => {
+              setContactChannelFilter('all');
+              setPage(1);
+            }}
+          >
+            All Contacts
+          </Pill>
+
+          <Pill
+            active={contactChannelFilter === 'has_whatsapp'}
+            onClick={() => {
+              setContactChannelFilter('has_whatsapp');
+              setPage(1);
+            }}
+          >
+            💬 WhatsApp Ready Only
+          </Pill>
+
+          <Pill
+            active={contactChannelFilter === 'has_email'}
+            onClick={() => {
+              setContactChannelFilter('has_email');
+              setPage(1);
+            }}
+          >
+            ✉️ Email Ready Only
+          </Pill>
+
+          <Pill
+            active={contactChannelFilter === 'both'}
+            onClick={() => {
+              setContactChannelFilter('both');
+              setPage(1);
+            }}
+          >
+            🚀 WhatsApp + Email (Double Reach)
+          </Pill>
         </div>
 
         {/* Secondary Tech Diagnostic Pills */}
@@ -565,13 +681,46 @@ export const LeadsPage: React.FC = () => {
 
                     {/* Phone */}
                     <Td className="mono text-tx-muted">
-                      {phone ? (
-                        <a href={`tel:${phone}`} className="hover:text-tx hover:underline">
-                          {phone}
-                        </a>
-                      ) : (
-                        '—'
-                      )}
+                      <div className="space-y-1">
+                        {phone ? (
+                          <div className="flex items-center gap-1.5">
+                            <a href={`tel:${phone}`} className="hover:text-tx hover:underline text-xs">
+                              {phone}
+                            </a>
+                            {tags.includes('Verified WhatsApp') && (
+                              <span
+                                className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
+                                title="WhatsApp Verified from website contact link"
+                              >
+                                WA ✓
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-tx-subtle text-xs">—</span>
+                        )}
+
+                        {lead.emails && lead.emails.length > 0 ? (
+                          <div className="flex items-center gap-1 text-[11px] text-tx-muted truncate max-w-[170px]" title={lead.emails[0]}>
+                            <Mail className="w-2.5 h-2.5 shrink-0 text-tx-subtle" />
+                            <span className="truncate">{lead.emails[0]}</span>
+                          </div>
+                        ) : lead.website ? (
+                          <button
+                            type="button"
+                            onClick={() => handleExtractSingleLead(lead.id)}
+                            disabled={extractingLeadId === lead.id}
+                            className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 cursor-pointer font-sans"
+                            title="Scrape business website for direct WhatsApp and Email"
+                          >
+                            {extractingLeadId === lead.id ? (
+                              <div className="w-2.5 h-2.5 border border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <span>🔍 Extract Contacts</span>
+                            )}
+                          </button>
+                        ) : null}
+                      </div>
                     </Td>
 
                     {/* Outreach Status */}
@@ -618,10 +767,12 @@ export const LeadsPage: React.FC = () => {
                       {cleanPhone ? (
                         <button
                           onClick={() => handleWhatsAppClick(lead, phone!)}
-                          className="pill-luxury on text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                          className={`pill-luxury on text-[11px] inline-flex items-center gap-1 cursor-pointer ${
+                            tags.includes('Verified WhatsApp') ? 'border-emerald-500/60 text-emerald-600 font-semibold' : ''
+                          }`}
                           title="Open WhatsApp chat and track as contacted"
                         >
-                          <MessageCircle className="w-3 h-3" />
+                          <MessageCircle className="w-3 h-3 text-emerald-600" />
                           <span>WhatsApp</span>
                         </button>
                       ) : (
