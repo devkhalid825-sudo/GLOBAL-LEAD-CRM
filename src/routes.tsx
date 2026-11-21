@@ -16,6 +16,7 @@ import { FollowupsPage } from './pages/Followups.js';
 import { MeetingsPage } from './pages/Meetings.js';
 import { ProposalsPage } from './pages/Proposals.js';
 import { PublicProposalPage } from './pages/PublicProposal.js';
+import { WhatsAppWebPage } from './pages/WhatsAppWeb.js';
 
 // Console Pages (Phase 1)
 import { IntegrationsPage } from './pages/console/Integrations.js';
@@ -46,6 +47,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="finder" element={<LeadFinderPage />} />
         <Route path="leads" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
+        <Route path="whatsapp-web" element={<WhatsAppWebPage />} />
         <Route path="inbox" element={<InboxPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="meetings" element={<MeetingsPage />} />

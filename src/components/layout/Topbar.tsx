@@ -41,6 +41,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMenu }) => {
     { label: 'Dashboard', to: '/dashboard' },
     { label: 'Lead finder', to: '/finder' },
     { label: 'Leads', to: '/leads' },
+    { label: 'WhatsApp Web', to: '/whatsapp-web' },
     { label: 'Meetings', to: '/meetings' },
   ];
 

@@ -38,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Lead finder', to: '/finder', icon: Compass, badge: 'Grid 2km' },
     { label: 'All leads', to: '/leads', icon: Users, badge: 'Meta' },
+    { label: 'WhatsApp Web', to: '/whatsapp-web', icon: MessageCircle, badge: 'Live' },
     { label: 'WhatsApp applied', to: '/leads?status=contacted_whatsapp', icon: MessageCircle, badge: 'WA' },
     { label: 'Email applied', to: '/leads?status=contacted_email', icon: Mail, badge: 'Email' },
     { label: 'Paused leads', to: '/leads?status=paused', icon: PauseCircle, badge: 'Hold' },
