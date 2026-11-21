@@ -90,12 +90,16 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
     }
   };
 
-  const handleStartConnect = async () => {
+  const handleStartConnect = async (force = false) => {
     setError(null);
     setLoading(true);
     setStatus('connecting');
+    if (force) {
+      setQrCodeUrl(null);
+      setPairingCode(null);
+    }
     try {
-      const res: any = await api.post('/whatsapp/connect', {});
+      const res: any = await api.post('/whatsapp/connect', { force });
       const payload = res?.data !== undefined ? res.data : res;
       if (payload) {
         if (payload.status) setStatus(payload.status);
@@ -396,12 +400,12 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
                     <div className="pt-3 border-t border-border flex justify-between items-center">
                       <button
                         type="button"
-                        onClick={handleStartConnect}
+                        onClick={() => handleStartConnect(true)}
                         disabled={loading}
                         className="text-xs text-tx-muted hover:text-tx inline-flex items-center gap-1"
                       >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Reload QR</span>
+                        <span>Reset &amp; Reload QR</span>
                       </button>
                       <Button variant="ghost" onClick={onClose} size="sm">
                         Cancel
@@ -414,7 +418,7 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
                     <p className="text-xs text-tx-muted">
                       Generating secure WhatsApp QR code...
                     </p>
-                    <Button variant="ghost" onClick={handleStartConnect} size="sm">
+                    <Button variant="ghost" onClick={() => handleStartConnect()} size="sm">
                       <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                       <span>Retry</span>
                     </Button>
