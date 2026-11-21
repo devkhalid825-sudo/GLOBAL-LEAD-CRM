@@ -172,6 +172,26 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
     }
   };
 
+  const handleHardResetSession = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post('/whatsapp/reset', {});
+      setStatus('disconnected');
+      setPhone(null);
+      setName(null);
+      setQrCodeUrl(null);
+      setPairingCode(null);
+      if (onStatusChange) onStatusChange({ connected: false, phone: null });
+      // Start fresh clean connection
+      await handleStartConnect(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -180,9 +200,19 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
     >
       <div className="space-y-4">
         {error && (
-          <div className="p-3 rounded-btn border border-red-500/30 bg-red-500/10 text-xs text-red-500 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{error}</span>
+          <div className="p-3 rounded-btn border border-red-500/30 bg-red-500/10 text-xs text-red-500 flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleHardResetSession}
+              disabled={loading}
+              className="text-[11px] font-semibold text-red-600 dark:text-red-400 underline whitespace-nowrap hover:opacity-80 ml-2"
+            >
+              Reset Session
+            </button>
           </div>
         )}
 
@@ -303,6 +333,22 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
                       <p className="text-[11px] text-tx-subtle">
                         Do not include "+" or spaces. Example: for Pakistan <code>923001234567</code>, for USA <code>14155552671</code>.
                       </p>
+
+                      <div className="pt-2 flex justify-between items-center text-xs">
+                        <button
+                          type="button"
+                          onClick={handleHardResetSession}
+                          disabled={loading || pairingLoading}
+                          className="text-[11px] text-tx-muted hover:text-red-500 underline inline-flex items-center gap-1"
+                          title="Clear any stuck session credentials on the server"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                          <span>Clear Stuck Session &amp; Fresh Restart</span>
+                        </button>
+                        <Button variant="ghost" onClick={onClose} size="sm">
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 ) : (
@@ -400,12 +446,13 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
                     <div className="pt-3 border-t border-border flex justify-between items-center">
                       <button
                         type="button"
-                        onClick={() => handleStartConnect(true)}
+                        onClick={handleHardResetSession}
                         disabled={loading}
-                        className="text-xs text-tx-muted hover:text-tx inline-flex items-center gap-1"
+                        className="text-xs text-tx-muted hover:text-red-500 inline-flex items-center gap-1"
+                        title="Clear any stuck session credentials on the server and reload fresh QR"
                       >
                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                        <span>Reset &amp; Reload QR</span>
+                        <span>Wipe Session &amp; Reload QR</span>
                       </button>
                       <Button variant="ghost" onClick={onClose} size="sm">
                         Cancel
