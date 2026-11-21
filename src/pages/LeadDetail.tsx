@@ -26,6 +26,7 @@ import {
   Languages,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
+import { PhoneDialerModal } from '../components/leads/PhoneDialerModal.js';
 import { VoiceNoteRecorder, VoiceNotePlayer } from '../components/timeline/VoiceNoteRecorder.js';
 import { Card, Button, Input, Select, Textarea, Pill, Modal, Toast, Skeleton, EmptyState } from '../components/ui/index.js';
 
@@ -43,6 +44,7 @@ export const LeadDetailPage: React.FC = () => {
 
   // Call log dialog state
   const [showCallModal, setShowCallModal] = useState(false);
+  const [showPhoneDialer, setShowPhoneDialer] = useState(false);
   const [callOutcome, setCallOutcome] = useState('connected');
   const [callDuration, setCallDuration] = useState(60);
   const [callNotes, setCallNotes] = useState('');
@@ -77,6 +79,9 @@ export const LeadDetailPage: React.FC = () => {
   const [copiedMetaPitch, setCopiedMetaPitch] = useState(false);
   const [copiedCallHook, setCopiedCallHook] = useState(false);
   const [copiedStaffPitch, setCopiedStaffPitch] = useState(false);
+  const [copiedWebPitch, setCopiedWebPitch] = useState(false);
+  const [copiedPhotoPitch, setCopiedPhotoPitch] = useState(false);
+  const [copiedVideoPitch, setCopiedVideoPitch] = useState(false);
   const [showWebPreview, setShowWebPreview] = useState(false);
 
   // Ad Preview & Strategy Meeting states
@@ -520,13 +525,15 @@ export const LeadDetailPage: React.FC = () => {
               <h3 className="serif text-sm font-semibold text-tx mb-2">Direct outreach</h3>
               <div className="flex flex-wrap gap-2">
                 {phone && (
-                  <a
-                    href={`tel:${phone}`}
-                    className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 mono"
+                  <button
+                    type="button"
+                    onClick={() => setShowPhoneDialer(true)}
+                    className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1 mono hover:bg-surface-2"
+                    title="Launch CRM Softphone & VoIP Call"
                   >
-                    <Phone className="w-3 h-3" />
+                    <Phone className="w-3 h-3 text-tx" />
                     <span>Call</span>
-                  </a>
+                  </button>
                 )}
                 {waLink && (
                   <a
@@ -694,6 +701,84 @@ export const LeadDetailPage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Service-Specific High-Converting Pitches */}
+              <div className="space-y-2 pt-1 border-t border-border">
+                {/* 1. Website Development Pitch */}
+                {aiAudit.websitePitch && (
+                  <div className="p-2.5 bg-surface-2 rounded-btn border border-border space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-tx-subtle mono uppercase font-semibold">
+                        🌐 Website Pitch:
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiAudit.websitePitch);
+                          setCopiedWebPitch(true);
+                          setTimeout(() => setCopiedWebPitch(false), 2000);
+                        }}
+                        className="btn-ghost text-[10px] py-0.5 px-2 inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>{copiedWebPitch ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <p className="mono text-[11px] text-tx leading-relaxed">
+                      "{aiAudit.websitePitch}"
+                    </p>
+                  </div>
+                )}
+
+                {/* 2. AI Commercial Photography Pitch */}
+                {aiAudit.aiPhotographyPitch && (
+                  <div className="p-2.5 bg-surface-2 rounded-btn border border-border space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-tx-subtle mono uppercase font-semibold">
+                        📸 AI Photography Pitch:
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiAudit.aiPhotographyPitch);
+                          setCopiedPhotoPitch(true);
+                          setTimeout(() => setCopiedPhotoPitch(false), 2000);
+                        }}
+                        className="btn-ghost text-[10px] py-0.5 px-2 inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>{copiedPhotoPitch ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <p className="mono text-[11px] text-tx leading-relaxed">
+                      "{aiAudit.aiPhotographyPitch}"
+                    </p>
+                  </div>
+                )}
+
+                {/* 3. AI Video Ads & Reels Pitch */}
+                {aiAudit.aiVideoAdsPitch && (
+                  <div className="p-2.5 bg-surface-2 rounded-btn border border-border space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-tx-subtle mono uppercase font-semibold">
+                        🎬 AI Video Ads &amp; Reels Pitch:
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiAudit.aiVideoAdsPitch);
+                          setCopiedVideoPitch(true);
+                          setTimeout(() => setCopiedVideoPitch(false), 2000);
+                        }}
+                        className="btn-ghost text-[10px] py-0.5 px-2 inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>{copiedVideoPitch ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <p className="mono text-[11px] text-tx leading-relaxed">
+                      "{aiAudit.aiVideoAdsPitch}"
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Pitch Script with Multi-Language Translation */}
               <div className="space-y-2 text-xs pt-1">
@@ -1139,6 +1224,16 @@ export const LeadDetailPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Softphone & VoIP Call Dialer Modal */}
+      <PhoneDialerModal
+        isOpen={showPhoneDialer}
+        onClose={() => setShowPhoneDialer(false)}
+        recipientName={lead?.name}
+        phoneNumber={phone || ''}
+        leadId={id}
+        onCallLogged={fetchLeadData}
+      />
 
       {/* Email Delivery Outcome Alert Modal */}
       <Modal

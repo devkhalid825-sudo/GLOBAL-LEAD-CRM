@@ -445,6 +445,50 @@ export const AdPreviewModal: React.FC<AdPreviewModalProps> = ({ lead, onClose })
                 <span className="text-[11px] text-tx-subtle mono">1-click direct dispatch</span>
               </div>
 
+              {/* Service Pitch Angle Selectors (Website, AI Photography, AI Video, Meta Pixel) */}
+              <div className="flex items-center gap-1.5 flex-wrap my-2">
+                <span className="text-[10px] text-tx-subtle mono mr-1 font-semibold">Pitch Angle:</span>
+                <button
+                  type="button"
+                  onClick={() => setPitchText(!lead.website
+                    ? `Hi ${cleanName}, came across your business in ${lead.city || 'your area'} with great reviews, but noticed you don't have an official website or online store yet. Over 65% of customers search online before buying. We can build a fast, high-converting mobile website with direct WhatsApp ordering in 48 hours. Can I send you a quick 2-minute mockup preview?`
+                    : `Hi ${cleanName}, noticed your website is missing modern mobile funnels and instant WhatsApp ordering. We can revamp it to load in 1 second and double your visitor conversions. Open to a quick preview?`
+                  )}
+                  className="px-2.5 py-1 bg-surface-2 hover:bg-surface-1 border border-border rounded text-[10px] text-tx font-medium hover:border-tx transition"
+                >
+                  🌐 Website Pitch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPitchText(
+                    `Hi ${cleanName}, love your brand in ${lead.city || 'your area'}! Traditional commercial photoshoots cost thousands in studio rentals, models, and lighting. With our specialized AI Commercial Photography engine, we produce studio-grade 4K product shoots, lifestyle catalog imagery, and brand visuals at 80% lower cost. Would you like to see 3 sample AI shoots tailored for ${cleanName}?`
+                  )}
+                  className="px-2.5 py-1 bg-surface-2 hover:bg-surface-1 border border-border rounded text-[10px] text-tx font-medium hover:border-tx transition"
+                >
+                  📸 AI Photography Pitch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPitchText(
+                    `Hi ${cleanName}, static image ads are seeing lower click rates on Instagram & Meta today. We create scroll-stopping AI video ads, viral 9:16 Reels, and UGC motion creatives engineered to stop customer thumbs, lower Cost-Per-Click, and scale sales. Would you be open to seeing a 15-second creative video concept we drafted for ${cleanName}?`
+                  )}
+                  className="px-2.5 py-1 bg-surface-2 hover:bg-surface-1 border border-border rounded text-[10px] text-tx font-medium hover:border-tx transition"
+                >
+                  🎬 AI Video Ads Pitch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPitchText(
+                    isMetaIntegrated
+                      ? `Hi ${cleanName}, saw your ads on Instagram! Static photo ads get very low click rates today. We create scroll-stopping UGC video ads and high-converting hooks that 2x your ROAS. Would you like to see 2 quick video concepts for ${cleanName}?`
+                      : `Hi ${cleanName}, I checked your website and noticed your Meta Tracking Pixel isn't active. This means Facebook cannot track purchases or retarget buyers, wasting your daily ad budget. We can fix your Pixel + Conversions API so your ROAS increases immediately.`
+                  )}
+                  className="px-2.5 py-1 bg-surface-2 hover:bg-surface-1 border border-border rounded text-[10px] text-tx font-medium hover:border-tx transition"
+                >
+                  📊 Meta Pixel Pitch
+                </button>
+              </div>
+
               {/* Pitch Translator Bar */}
               <div className="flex items-center gap-1.5 flex-wrap my-2 pb-1 text-[11px]">
                 <Languages className="w-3.5 h-3.5 text-tx" />

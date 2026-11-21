@@ -17,6 +17,7 @@ import {
   Copy,
   Users,
   Zap,
+  Trash2,
 } from 'lucide-react';
 import {
   Card,
@@ -51,11 +52,17 @@ interface Meeting {
   lead?: MeetingLead | null;
 }
 
-function generateValidMeetUrl(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz';
+function generateValidMeetUrl(type: 'jitsi' | 'google' = 'jitsi'): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   const pick = (len: number) =>
     Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `https://meet.google.com/${pick(3)}-${pick(4)}-${pick(3)}`;
+  if (type === 'google') {
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const pickLetters = (len: number) =>
+      Array.from({ length: len }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
+    return `https://meet.google.com/${pickLetters(3)}-${pickLetters(4)}-${pickLetters(3)}`;
+  }
+  return `https://meet.jit.si/GlobalCRM-${pick(8)}`;
 }
 
 export const MeetingsPage: React.FC = () => {
@@ -222,6 +229,19 @@ export const MeetingsPage: React.FC = () => {
       );
     } catch (err) {
       console.error('Failed to update meeting status:', err);
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!window.confirm('Are you sure you want to remove this meeting?')) return;
+    try {
+      await apiFetch(`/meetings/${meetingId}`, {
+        method: 'DELETE',
+      });
+      setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+      setNotice('Meeting deleted.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete meeting');
     }
   };
 
@@ -461,6 +481,16 @@ export const MeetingsPage: React.FC = () => {
                         </Button>
                       </>
                     )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteMeeting(m.id)}
+                      className="p-2 text-tx-subtle hover:text-red-500"
+                      title="Delete Meeting"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               );

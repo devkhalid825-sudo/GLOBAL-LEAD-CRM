@@ -42,21 +42,19 @@ const FALLBACK_COUNTRIES: CountryItem[] = [
 ];
 
 const FALLBACK_CATEGORIES: CategoryItem[] = [
-  // 1. High-Paying Client Niches (Real Buyers who need Websites, Ads & Apps)
-  { id: 'cat_realestate', name: '🏢 Real estate brokers & property developers (High-Ticket Buyers)' },
+  // High-Value Commercial Niches (Businesses who NEED Websites, Apps, E-Commerce & Systems)
   { id: 'cat_clinics', name: '🦷 Aesthetic, dermatology & dental clinics (High-Intent Bookings)' },
+  { id: 'cat_realestate', name: '🏢 Real estate brokers & property developers (High-Ticket Buyers)' },
+  { id: 'cat_ecommerce_brands', name: '🛍️ Retail, jewellery & fashion e-commerce brands (Shopify & Meta Ads)' },
+  { id: 'cat_restaurants', name: '🍽️ Restaurants, cafes & luxury hospitality (Menus & Local SEO)' },
   { id: 'cat_lawyers', name: '⚖️ Corporate law firms & legal consultants (High Budget)' },
   { id: 'cat_luxury_cars', name: '🚗 Luxury car rentals & exotic auto showrooms (Booking Systems)' },
   { id: 'cat_solar_contractors', name: '☀️ Solar energy & home renovation contractors (Lead Funnels)' },
   { id: 'cat_interior_design', name: '🛋️ Interior design & architecture firms (Portfolio Websites)' },
-  { id: 'cat_ecommerce_brands', name: '🛍️ Retail, jewellery & fashion e-commerce brands (Shopify & Meta Ads)' },
-  { id: 'cat_restaurants', name: '🍽️ Restaurants, cafes & luxury hospitality (Menus & Local SEO)' },
   { id: 'cat_accounting', name: '💼 Accounting, audit & financial advisory firms (Corporate Portals)' },
-
-  // 2. White-label & Agency Partner Niches
-  { id: 'cat_remote_staff', name: '👥 Foreign agencies seeking remote staff / dedicated developers' },
-  { id: 'cat_it', name: '💻 Digital marketing agencies (White-label dev partner)' },
-  { id: 'cat_webdev', name: '🌐 Web development agencies & software houses' },
+  { id: 'cat_gyms', name: '🏋️ Fitness gyms, yoga studios & wellness spas (Memberships)' },
+  { id: 'cat_schools', name: '🎓 Training academies, private institutes & colleges (Admissions)' },
+  { id: 'cat_logistics', name: '📦 Cargo, courier & relocation logistics (Quotation Portals)' },
 ];
 
 const FALLBACK_CITIES: Record<string, CityItem[]> = {
@@ -325,6 +323,17 @@ export const LeadFinderPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Finder Search Form Card (Span 8) */}
         <div className="lg:col-span-8 card-luxury p-6 space-y-6">
+          {/* Client Targeting & Anti-Competitor Protection Badge */}
+          <div className="p-3 bg-surface-2 border border-border rounded-xl flex items-start gap-3">
+            <Target className="w-4 h-4 text-tx mt-0.5 flex-shrink-0" />
+            <div className="text-xs space-y-0.5">
+              <span className="font-semibold text-tx block">Targeting Real Commercial Buyers</span>
+              <p className="text-tx-muted leading-relaxed">
+                Anti-competitor filter active: software houses, web development agencies, and IT companies are automatically filtered out. All generated leads are real commercial clients (clinics, real estate, luxury retail, restaurants, contractors) who need websites, e-commerce, and software built for them.
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
             <div className="sm:col-span-8 space-y-1.5">
               <div className="flex items-center justify-between">

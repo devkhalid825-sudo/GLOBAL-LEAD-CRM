@@ -17,9 +17,20 @@ import {
   X,
   Check,
   Volume2,
+  Paperclip,
+  FileText,
+  Image as ImageIcon,
+  Phone,
+  Video,
+  Download,
+  ExternalLink,
+  PhoneCall,
+  AlertCircle,
+  MoreVertical,
 } from 'lucide-react';
 import { Card, Button, Input, Modal } from '../components/ui/index.js';
 import { VoiceNotePlayer } from '../components/timeline/VoiceNoteRecorder.js';
+import { PhoneDialerModal } from '../components/leads/PhoneDialerModal.js';
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '🚀', '🎉', '👏', '💯', '🤝', '📞', '💬', '💼', '⚡', '🏢', '🎯', '✨', '🙏', '🙌', '😍', '🤩'];
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '🔥', '🚀', '🎉'];
@@ -34,6 +45,18 @@ export const ChatPage: React.FC = () => {
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Attachment Menu & Hidden File Inputs
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  // Softphone Dialer Modal
+  const [showPhoneDialer, setShowPhoneDialer] = useState(false);
+
+  // Delete Thread Confirmation Modal
+  const [showDeleteThreadModal, setShowDeleteThreadModal] = useState(false);
+  const [deletingThread, setDeletingThread] = useState(false);
 
   // New Channel Modal
   const [showNewModal, setShowNewModal] = useState(false);
@@ -60,10 +83,11 @@ export const ChatPage: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
-      const data = await api.get<any[]>('/conversations');
-      setConversations(data);
-      if (data.length > 0 && !activeConv) {
-        setActiveConv(data[0]);
+      const res: any = await api.get('/conversations');
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setConversations(list);
+      if (list.length > 0 && !activeConv) {
+        setActiveConv(list[0]);
       }
     } catch (err) {
       console.error(err);
@@ -72,8 +96,9 @@ export const ChatPage: React.FC = () => {
 
   const fetchMessages = async (convId: string) => {
     try {
-      const data = await api.get<any[]>(`/conversations/${convId}/messages`);
-      setMessages(data);
+      const res: any = await api.get(`/conversations/${convId}/messages`);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setMessages(list);
     } catch (err) {
       console.error(err);
     }
@@ -113,6 +138,11 @@ export const ChatPage: React.FC = () => {
       setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
     });
 
+    chatSocket.on('conversation_deleted', (data: { conversationId: string }) => {
+      setConversations((prev) => prev.filter((c) => c.id !== data.conversationId));
+      setActiveConv((curr: any) => (curr?.id === data.conversationId ? null : curr));
+    });
+
     setSocket(chatSocket);
 
     return () => {
@@ -133,7 +163,7 @@ export const ChatPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Voice Note Recording Functions
+  // Voice Note Recording
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -175,7 +205,7 @@ export const ChatPage: React.FC = () => {
         setRecordingDuration((p) => p + 1);
       }, 1000);
     } catch (err: any) {
-      alert('Microphone access denied or not available: ' + err.message);
+      alert('Microphone access denied: ' + err.message);
     }
   };
 
@@ -196,6 +226,7 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  // Text Message Sending
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMsg.trim() || !activeConv) return;
@@ -203,6 +234,7 @@ export const ChatPage: React.FC = () => {
     const bodyText = newMsg.trim();
     setNewMsg('');
     setShowEmojiPicker(false);
+    setShowAttachmentMenu(false);
 
     try {
       await api.post(`/conversations/${activeConv.id}/messages`, {
@@ -210,6 +242,76 @@ export const ChatPage: React.FC = () => {
       });
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  // Document & File Upload
+  const handleFileAttachment = (e: React.ChangeEvent<HTMLInputElement>, fileKind: 'document' | 'image') => {
+    const file = e.target.files?.[0];
+    if (!file || !activeConv) return;
+    setShowAttachmentMenu(false);
+
+    const sizeStr =
+      file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64Data = reader.result as string;
+      const payload = JSON.stringify({
+        type: fileKind,
+        name: file.name,
+        size: sizeStr,
+        mimeType: file.type,
+        data: base64Data,
+      });
+
+      try {
+        await api.post(`/conversations/${activeConv.id}/messages`, { body: payload });
+      } catch (err: any) {
+        alert(`File share failed: ${err.message}`);
+      }
+    };
+    e.target.value = '';
+  };
+
+  // Instant Video Meeting Launcher
+  const handleStartVideoMeet = async () => {
+    if (!activeConv) return;
+    setShowAttachmentMenu(false);
+    const roomCode = Math.random().toString(36).substring(2, 9);
+    const meetUrl = `https://meet.jit.si/GlobalCRM-Call-${roomCode}`;
+    window.open(meetUrl, '_blank');
+
+    const payload = JSON.stringify({
+      type: 'meet_invite',
+      title: 'Live Video & Audio Strategy Session',
+      link: meetUrl,
+      startedBy: user?.name || 'CRM Team',
+    });
+
+    try {
+      await api.post(`/conversations/${activeConv.id}/messages`, { body: payload });
+    } catch {}
+  };
+
+  // Delete entire conversation thread
+  const handleDeleteThread = async () => {
+    if (!activeConv) return;
+    setDeletingThread(true);
+    try {
+      await api.delete(`/conversations/${activeConv.id}`);
+      const remaining = conversations.filter((c) => c.id !== activeConv.id);
+      setConversations(remaining);
+      setActiveConv(remaining.length > 0 ? remaining[0] : null);
+      setMessages([]);
+      setShowDeleteThreadModal(false);
+    } catch (err: any) {
+      alert(`Delete thread failed: ${err.message}`);
+    } finally {
+      setDeletingThread(false);
     }
   };
 
@@ -223,10 +325,11 @@ export const ChatPage: React.FC = () => {
     if (!editMsgText.trim() || !activeConv) return;
     setSavingEdit(true);
     try {
-      const res = await api.patch<any>(`/conversations/${activeConv.id}/messages/${msgId}`, {
+      const res: any = await api.patch(`/conversations/${activeConv.id}/messages/${msgId}`, {
         body: editMsgText.trim(),
       });
-      setMessages((prev) => prev.map((m) => (m.id === msgId ? res : m)));
+      const updated = res?.data || res;
+      setMessages((prev) => prev.map((m) => (m.id === msgId ? updated : m)));
       setEditingMsgId(null);
     } catch (err: any) {
       alert(`Edit failed: ${err.message}`);
@@ -263,10 +366,11 @@ export const ChatPage: React.FC = () => {
     setCreatingChannel(true);
 
     try {
-      const conv = await api.post<any>('/conversations', {
+      const res: any = await api.post('/conversations', {
         type: 'channel',
         name: channelName.trim(),
       });
+      const conv = res?.data || res;
       setShowNewModal(false);
       setChannelName('');
       setConversations((prev) => [conv, ...prev]);
@@ -286,6 +390,22 @@ export const ChatPage: React.FC = () => {
 
   return (
     <Card className="flex h-[calc(100vh-8rem)] overflow-hidden p-0 relative">
+      {/* Hidden File Inputs for Document & Image Sharing */}
+      <input
+        type="file"
+        ref={docInputRef}
+        onChange={(e) => handleFileAttachment(e, 'document')}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip"
+      />
+      <input
+        type="file"
+        ref={imgInputRef}
+        onChange={(e) => handleFileAttachment(e, 'image')}
+        className="hidden"
+        accept="image/*"
+      />
+
       {/* Channels & Direct Conversations Sidebar */}
       <div
         className={`w-full md:w-64 bg-surface-1 border-r border-border flex flex-col flex-shrink-0 ${
@@ -295,12 +415,12 @@ export const ChatPage: React.FC = () => {
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-serif text-sm font-bold text-tx flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-tx" />
-            <span>Team Channels</span>
+            <span>Outreach Threads</span>
           </h2>
           <button
             onClick={() => setShowNewModal(true)}
-            className="p-1 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
-            title="Create Channel"
+            className="p-1.5 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
+            title="Create Thread / Channel"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -309,7 +429,7 @@ export const ChatPage: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {conversations.length === 0 ? (
             <div className="text-center py-8 text-xs text-tx-subtle">
-              No channels yet.
+              No threads yet.
             </div>
           ) : (
             conversations.map((conv) => {
@@ -323,12 +443,14 @@ export const ChatPage: React.FC = () => {
                   }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center gap-2.5 transition ${
                     isSelected
-                      ? 'bg-surface-2 text-tx font-semibold border border-border'
+                      ? 'bg-surface-2 text-tx font-semibold border border-border shadow-xs'
                       : 'text-tx-muted hover:bg-surface-2 hover:text-tx'
                   }`}
                 >
-                  <Hash className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">{conv.name || 'General Outreach'}</span>
+                  <div className="w-6 h-6 rounded-full bg-surface-2 border border-border flex items-center justify-center text-[10px] font-bold">
+                    {conv.name ? conv.name.charAt(0).toUpperCase() : '#'}
+                  </div>
+                  <span className="truncate flex-1">{conv.name || 'Outreach Discussion'}</span>
                 </button>
               );
             })
@@ -336,48 +458,81 @@ export const ChatPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Messages Stream & Chat Window */}
+      {/* Messages Stream & WhatsApp Chat Window */}
       <div
         className={`flex-1 flex flex-col min-w-0 bg-canvas ${
           mobileShowChat ? 'flex' : 'hidden md:flex'
         }`}
       >
-        {/* Chat Header */}
+        {/* Chat Header: WhatsApp-style with Calling & Thread Actions */}
         <div className="h-14 px-4 sm:px-6 border-b border-border flex items-center justify-between bg-surface-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileShowChat(false)}
-              className="md:hidden p-1.5 -ml-1 mr-1 text-tx-muted hover:text-tx rounded-lg hover:bg-surface-2 transition"
-              title="Back to Channels"
+              className="md:hidden p-1.5 -ml-1 text-tx-muted hover:text-tx rounded-lg hover:bg-surface-2 transition"
+              title="Back"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <Hash className="w-4 h-4 text-tx" />
-            <span className="font-serif font-bold text-tx text-sm truncate max-w-[180px] sm:max-w-none">
-              {activeConv?.name || 'General Outreach'}
-            </span>
+            <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              {activeConv?.name ? activeConv.name.charAt(0).toUpperCase() : 'W'}
+            </div>
+            <div>
+              <span className="font-serif font-bold text-tx text-sm block truncate max-w-[160px] sm:max-w-none">
+                {activeConv?.name || 'Client Outreach Thread'}
+              </span>
+              <span className="text-[10px] text-tx-subtle flex items-center gap-1 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                <span>WhatsApp Active Sync</span>
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            {isConnected ? (
-              <span className="flex items-center gap-1.5 text-tx font-mono text-[11px]">
-                <span className="w-2 h-2 rounded-full bg-tx inline-block animate-pulse" />
-                <span className="hidden sm:inline">Online</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-tx-subtle font-mono text-[11px]">
-                <span className="w-2 h-2 rounded-full border border-tx-subtle inline-block" />
-                <span className="hidden sm:inline">Disconnected</span>
-              </span>
+          {/* Action Buttons: Voice Call, Video Call, Delete Thread */}
+          <div className="flex items-center gap-2">
+            {/* 1. Voice Call */}
+            <button
+              type="button"
+              onClick={() => setShowPhoneDialer(true)}
+              className="p-2 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
+              title="Start Voice / Softphone Call"
+            >
+              <Phone className="w-4 h-4 text-tx" />
+            </button>
+
+            {/* 2. Video Call / Meet */}
+            <button
+              type="button"
+              onClick={handleStartVideoMeet}
+              className="p-2 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
+              title="Start Live Video Strategy Call"
+            >
+              <Video className="w-4 h-4 text-tx" />
+            </button>
+
+            {/* 3. Delete Thread */}
+            {activeConv && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteThreadModal(true)}
+                className="p-2 text-tx-muted hover:text-red-500 hover:bg-surface-2 rounded-lg transition"
+                title="Delete this thread"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             )}
           </div>
         </div>
 
         {/* Message Bubble Feed */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-pattern-subtle">
           {messages.length === 0 ? (
-            <div className="text-center py-16 text-xs text-tx-subtle">
-              No messages yet in this channel. Send the first message or voice note below.
+            <div className="text-center py-16 text-xs text-tx-subtle space-y-2">
+              <div className="w-12 h-12 rounded-full bg-surface-2 border border-border mx-auto flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-tx-muted" />
+              </div>
+              <p>No messages yet in this thread.</p>
+              <p className="text-[11px]">Send text, documents, audio voice notes, or launch a live call below.</p>
             </div>
           ) : (
             messages.map((m) => {
@@ -385,12 +540,19 @@ export const ChatPage: React.FC = () => {
               const isEditing = editingMsgId === m.id;
               const reactions = messageReactions[m.id] || [];
 
-              // Check if body is a Voice Note
+              // Parse special message payloads
               let voiceData: { audio: string; duration?: number } | null = null;
-              if (typeof m.body === 'string' && m.body.startsWith('{"type":"voice"')) {
+              let docData: { name: string; size?: string; data: string; caption?: string } | null = null;
+              let imgData: { name?: string; data: string; caption?: string } | null = null;
+              let meetData: { title?: string; link: string; startedBy?: string } | null = null;
+
+              if (typeof m.body === 'string' && m.body.startsWith('{')) {
                 try {
                   const parsed = JSON.parse(m.body);
                   if (parsed.type === 'voice') voiceData = parsed;
+                  if (parsed.type === 'document') docData = parsed;
+                  if (parsed.type === 'image') imgData = parsed;
+                  if (parsed.type === 'meet_invite') meetData = parsed;
                 } catch {}
               } else if (typeof m.body === 'string' && m.body.startsWith('data:audio')) {
                 voiceData = { audio: m.body, duration: 15 };
@@ -405,14 +567,14 @@ export const ChatPage: React.FC = () => {
                   <div className="flex items-center gap-2 mb-1 text-[11px] text-tx-muted">
                     <span className="font-serif font-semibold text-tx">{m.senderName}</span>
                     <span className="text-[9px] mono px-1.5 py-0.2 bg-surface-2 border border-border rounded text-tx-subtle">
-                      {isMe ? (user?.role || 'TEAM').toUpperCase() : 'TEAM'}
+                      {isMe ? (user?.role || 'AGENT').toUpperCase() : 'CLIENT'}
                     </span>
                     <span className="font-mono text-[10px] text-tx-subtle">
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
 
-                  {/* Bubble & Actions Container */}
+                  {/* Bubble Container */}
                   <div className="relative max-w-md">
                     {/* Floating WhatsApp Action Menu (Edit, Delete, React) */}
                     <div
@@ -433,8 +595,8 @@ export const ChatPage: React.FC = () => {
                         </button>
                       ))}
 
-                      {/* Edit (only for text messages by author/admin) */}
-                      {!voiceData && (isMe || user?.role === 'admin') && (
+                      {/* Edit (only for plain text messages) */}
+                      {!voiceData && !docData && !imgData && !meetData && (isMe || user?.role === 'admin') && (
                         <button
                           type="button"
                           onClick={() => handleStartEdit(m)}
@@ -445,7 +607,7 @@ export const ChatPage: React.FC = () => {
                         </button>
                       )}
 
-                      {/* Delete */}
+                      {/* Delete Message */}
                       {(isMe || user?.role === 'admin') && (
                         <button
                           type="button"
@@ -458,7 +620,7 @@ export const ChatPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Content: Edit Mode vs Normal View */}
+                    {/* Content Rendering */}
                     {isEditing ? (
                       <div className="p-2 bg-surface-2 border border-border rounded-xl space-y-2 w-72">
                         <input
@@ -488,8 +650,63 @@ export const ChatPage: React.FC = () => {
                           </button>
                         </div>
                       </div>
+                    ) : meetData ? (
+                      /* 1. Live Video Call Invite Card */
+                      <div className="p-3.5 bg-surface-2 border border-border rounded-2xl space-y-2.5 shadow-sm">
+                        <div className="flex items-center gap-2 text-xs font-bold text-tx">
+                          <div className="w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center">
+                            <Video className="w-4 h-4" />
+                          </div>
+                          <span>{meetData.title || 'Live Strategy Video Call'}</span>
+                        </div>
+                        <p className="text-[11px] text-tx-muted leading-relaxed">
+                          Started by {meetData.startedBy || 'Team'}. Audio &amp; video lines are open.
+                        </p>
+                        <a
+                          href={meetData.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-primary text-xs py-1.5 px-3 flex items-center justify-center gap-1.5 w-full font-semibold"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Join Video Call</span>
+                          <ExternalLink className="w-3 h-3 ml-1" />
+                        </a>
+                      </div>
+                    ) : docData ? (
+                      /* 2. WhatsApp Document / PDF Box */
+                      <div className="p-3 bg-surface-2 border border-border rounded-2xl space-y-2 shadow-xs">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-surface-1 border border-border flex items-center justify-center text-tx flex-shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-tx truncate">{docData.name}</p>
+                            <p className="text-[10px] text-tx-muted font-mono">{docData.size || 'Document'}</p>
+                          </div>
+                        </div>
+                        <a
+                          href={docData.data}
+                          download={docData.name}
+                          className="btn-ghost text-xs py-1.5 px-3 flex items-center justify-center gap-1.5 w-full border border-border"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download / Open Document</span>
+                        </a>
+                      </div>
+                    ) : imgData ? (
+                      /* 3. Photo / Image Card */
+                      <div className="space-y-1">
+                        <img
+                          src={imgData.data}
+                          alt={imgData.name || 'Shared Image'}
+                          className="rounded-2xl max-h-64 object-cover border border-border cursor-pointer shadow-sm hover:opacity-95 transition"
+                          onClick={() => window.open(imgData!.data, '_blank')}
+                        />
+                        {imgData.caption && <p className="text-xs text-tx px-1">{imgData.caption}</p>}
+                      </div>
                     ) : voiceData ? (
-                      /* WhatsApp Style Voice Note Player */
+                      /* 4. WhatsApp Voice Note Player */
                       <div className="p-1">
                         <VoiceNotePlayer
                           audioData={voiceData.audio}
@@ -497,7 +714,7 @@ export const ChatPage: React.FC = () => {
                         />
                       </div>
                     ) : (
-                      /* Standard Message Bubble */
+                      /* 5. Standard Text Message Bubble */
                       <div
                         className={`px-4 py-2.5 rounded-2xl text-xs break-words shadow-sm leading-relaxed ${
                           isMe
@@ -540,9 +757,53 @@ export const ChatPage: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Attachment Options Popover Menu */}
+        {showAttachmentMenu && (
+          <div className="absolute bottom-16 left-6 p-2 bg-surface-1 border border-border rounded-2xl shadow-xl space-y-1 z-30 min-w-[200px] animate-in fade-in zoom-in-95">
+            <button
+              type="button"
+              onClick={() => docInputRef.current?.click()}
+              className="w-full text-left px-3 py-2 text-xs text-tx hover:bg-surface-2 rounded-xl flex items-center gap-2.5 transition"
+            >
+              <FileText className="w-4 h-4 text-tx" />
+              <span>Share Document / PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => imgInputRef.current?.click()}
+              className="w-full text-left px-3 py-2 text-xs text-tx hover:bg-surface-2 rounded-xl flex items-center gap-2.5 transition"
+            >
+              <ImageIcon className="w-4 h-4 text-tx" />
+              <span>Share Photos &amp; Media</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleStartVideoMeet}
+              className="w-full text-left px-3 py-2 text-xs text-tx hover:bg-surface-2 rounded-xl flex items-center gap-2.5 transition"
+            >
+              <Video className="w-4 h-4 text-tx" />
+              <span>Launch Video Call Room</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowAttachmentMenu(false);
+                setShowPhoneDialer(true);
+              }}
+              className="w-full text-left px-3 py-2 text-xs text-tx hover:bg-surface-2 rounded-xl flex items-center gap-2.5 transition"
+            >
+              <Phone className="w-4 h-4 text-tx" />
+              <span>Open Softphone Dialer</span>
+            </button>
+          </div>
+        )}
+
         {/* Floating Emoji Popover */}
         {showEmojiPicker && (
-          <div className="absolute bottom-16 left-6 p-2 bg-surface-1 border border-border rounded-xl shadow-lg flex flex-wrap gap-1.5 max-w-xs z-30">
+          <div className="absolute bottom-16 left-12 p-2 bg-surface-1 border border-border rounded-xl shadow-lg flex flex-wrap gap-1.5 max-w-xs z-30">
             {QUICK_EMOJIS.map((emoji) => (
               <button
                 key={emoji}
@@ -565,7 +826,7 @@ export const ChatPage: React.FC = () => {
             /* Active WhatsApp Voice Note Bar */
             <div className="flex items-center justify-between bg-surface-2 border border-border p-2.5 rounded-btn">
               <div className="flex items-center gap-2.5 text-xs text-tx">
-                <span className="w-2.5 h-2.5 rounded-full bg-tx animate-ping" />
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
                 <span className="mono font-semibold text-tx">Recording Voice Note...</span>
                 <span className="mono text-[11px] text-tx-muted">{formatSec(recordingDuration)}</span>
               </div>
@@ -590,12 +851,30 @@ export const ChatPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* Standard Text Message Form */
+            /* Standard WhatsApp Input Form */
             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              {/* Attachment Paperclip Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAttachmentMenu((p) => !p);
+                  setShowEmojiPicker(false);
+                }}
+                className={`p-2 rounded-lg transition ${
+                  showAttachmentMenu ? 'bg-surface-2 text-tx' : 'text-tx-subtle hover:text-tx hover:bg-surface-2'
+                }`}
+                title="Attach Document, Photo, or Meeting Link"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
               {/* Emoji Picker Button */}
               <button
                 type="button"
-                onClick={() => setShowEmojiPicker((p) => !p)}
+                onClick={() => {
+                  setShowEmojiPicker((p) => !p);
+                  setShowAttachmentMenu(false);
+                }}
                 className={`p-2 rounded-lg transition ${
                   showEmojiPicker ? 'bg-surface-2 text-tx' : 'text-tx-subtle hover:text-tx hover:bg-surface-2'
                 }`}
@@ -609,7 +888,7 @@ export const ChatPage: React.FC = () => {
                 type="text"
                 value={newMsg}
                 onChange={(e) => setNewMsg(e.target.value)}
-                placeholder={`Message #${activeConv?.name || 'channel'}...`}
+                placeholder={`Message #${activeConv?.name || 'thread'}...`}
                 className="flex-1 input-luxury text-xs"
               />
 
@@ -638,17 +917,64 @@ export const ChatPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Delete Thread Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteThreadModal}
+        onClose={() => setShowDeleteThreadModal(false)}
+        title="Delete Conversation Thread"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 bg-surface-2 rounded-xl border border-border">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1 text-tx">
+              <span className="font-semibold block">Are you sure?</span>
+              <p className="text-tx-muted leading-relaxed">
+                This will permanently delete <strong>{activeConv?.name || 'this thread'}</strong> and all associated messages, files, and voice notes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteThreadModal(false)}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleDeleteThread}
+              loading={deletingThread}
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              <span>Delete Thread</span>
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* In-App Softphone Dialer Modal */}
+      <PhoneDialerModal
+        isOpen={showPhoneDialer}
+        onClose={() => setShowPhoneDialer(false)}
+        recipientName={activeConv?.name || 'Prospect'}
+        phoneNumber=""
+      />
+
       {/* Create Channel Modal */}
       <Modal
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
-        title="Create Team Channel"
+        title="Create Team Channel / Outreach Thread"
       >
         <form onSubmit={handleCreateChannel} className="space-y-4">
           <Input
             label="Channel Name"
             required
-            placeholder="e.g. dubai-prospecting"
+            placeholder="e.g. dubai-clinics-outreach"
             value={channelName}
             onChange={(e) => setChannelName(e.target.value)}
           />
@@ -668,7 +994,7 @@ export const ChatPage: React.FC = () => {
               size="sm"
               loading={creatingChannel}
             >
-              Create channel
+              Create thread
             </Button>
           </div>
         </form>

@@ -42,7 +42,7 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
     if (isOpen && status === 'connecting') {
       interval = setInterval(() => {
         checkStatus(true);
-      }, 3000);
+      }, 2000);
     }
     return () => {
       if (interval) clearInterval(interval);
