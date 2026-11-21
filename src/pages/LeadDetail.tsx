@@ -246,6 +246,9 @@ export const LeadDetailPage: React.FC = () => {
       ]);
       setLead(leadRes);
       setTimeline(Array.isArray(timelineRes) ? timelineRes : []);
+      if (leadRes?.name) {
+        api.post('/users/track-lead-view', { leadId: id, leadName: leadRes.name }).catch(() => {});
+      }
     } catch (err) {
       console.error(err);
     } finally {

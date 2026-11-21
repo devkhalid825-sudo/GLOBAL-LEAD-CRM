@@ -18,6 +18,10 @@ import {
   UserCog,
   Activity,
   Send,
+  MessageCircle,
+  Mail,
+  PauseCircle,
+  Radio,
   X,
 } from 'lucide-react';
 
@@ -33,8 +37,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const baseNav = [
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Lead finder', to: '/finder', icon: Compass, badge: 'Grid 2km' },
-    { label: 'Leads directory', to: '/leads', icon: Users, badge: 'Meta' },
-    { label: 'Applied leads', to: '/leads?status=contacted_all', icon: Send, badge: 'Pipeline' },
+    { label: 'All leads', to: '/leads', icon: Users, badge: 'Meta' },
+    { label: 'WhatsApp applied', to: '/leads?status=contacted_whatsapp', icon: MessageCircle, badge: 'WA' },
+    { label: 'Email applied', to: '/leads?status=contacted_email', icon: Mail, badge: 'Email' },
+    { label: 'Paused leads', to: '/leads?status=paused', icon: PauseCircle, badge: 'Hold' },
     { label: 'Meetings & calls', to: '/meetings', icon: Calendar, badge: 'Meet' },
     { label: 'Proposals & deals', to: '/proposals', icon: FileText },
     { label: 'Unified inbox', to: '/inbox', icon: Inbox },

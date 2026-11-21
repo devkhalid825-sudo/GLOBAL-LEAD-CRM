@@ -8,16 +8,20 @@ import { api } from '../../api/client.js';
 export const AppShell: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Active time & heartbeat tracker: records active session minutes while CRM window is open
+  // Active time & heartbeat tracker: records active session screen time while CRM window is active
   useEffect(() => {
     const sendBeat = () => {
       if (!document.hidden) {
+        api.post('/users/heartbeat', {
+          seconds: 30,
+          path: window.location.pathname,
+        }).catch(() => {});
         api.post('/reports/heartbeat', {}).catch(() => {});
       }
     };
 
     sendBeat();
-    const interval = setInterval(sendBeat, 60000); // every 60s
+    const interval = setInterval(sendBeat, 30000); // every 30s
     return () => clearInterval(interval);
   }, []);
 

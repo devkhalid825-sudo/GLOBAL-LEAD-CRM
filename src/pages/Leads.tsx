@@ -13,6 +13,10 @@ import {
   Mail,
   Send,
   SlidersHorizontal,
+  Pause,
+  Play,
+  PauseCircle,
+  PlayCircle,
 } from 'lucide-react';
 import { AdPreviewModal } from '../components/leads/AdPreviewModal.js';
 import { BulkWhatsAppModal } from '../components/whatsapp/BulkWhatsAppModal.js';
@@ -71,6 +75,30 @@ export const LeadsPage: React.FC = () => {
       );
       setNotice(`"${lead.name}" marked as WhatsApp Contacted.`);
     } catch {}
+  };
+
+  const handlePauseLead = async (lead: any) => {
+    try {
+      await api.post(`/leads/${lead.id}/pause`, {});
+      setLeads((prev) =>
+        prev.map((l) => (l.id === lead.id ? { ...l, status: 'paused' } : l))
+      );
+      setNotice(`"${lead.name}" paused and moved to On Hold.`);
+    } catch (err: any) {
+      alert(`Pause failed: ${err.message}`);
+    }
+  };
+
+  const handleResumeLead = async (lead: any) => {
+    try {
+      await api.post(`/leads/${lead.id}/resume`, {});
+      setLeads((prev) =>
+        prev.map((l) => (l.id === lead.id ? { ...l, status: 'new' } : l))
+      );
+      setNotice(`"${lead.name}" resumed back to active outreach pipeline.`);
+    } catch (err: any) {
+      alert(`Resume failed: ${err.message}`);
+    }
   };
 
   const fetchLeads = async () => {
@@ -319,6 +347,26 @@ export const LeadsPage: React.FC = () => {
             >
               📄 Proposals Sent
             </Pill>
+
+            <Pill
+              active={statusFilter === 'paused'}
+              onClick={() => {
+                setStatusFilter('paused');
+                setPage(1);
+              }}
+            >
+              ⏸️ Paused / On Hold
+            </Pill>
+
+            <Pill
+              active={statusFilter === 'interested'}
+              onClick={() => {
+                setStatusFilter('interested');
+                setPage(1);
+              }}
+            >
+              🔥 Hot / Interested
+            </Pill>
           </div>
         </div>
 
@@ -554,6 +602,10 @@ export const LeadsPage: React.FC = () => {
                         <span className="px-2 py-0.5 rounded text-[10px] mono font-medium bg-surface-2 border border-border text-tx">
                           📄 Proposal
                         </span>
+                      ) : lead.status === 'paused' ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] mono font-bold bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+                          ⏸️ Paused
+                        </span>
                       ) : (
                         <span className="text-[10px] mono text-tx-subtle">
                           ○ Fresh
@@ -587,6 +639,25 @@ export const LeadsPage: React.FC = () => {
                     {/* Actions */}
                     <Td className="text-right">
                       <div className="inline-flex items-center justify-end gap-1.5">
+                        {lead.status === 'paused' ? (
+                          <button
+                            onClick={() => handleResumeLead(lead)}
+                            className="btn-ghost text-xs py-1 px-2 flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                            title="Resume lead back to pipeline"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span>Resume</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePauseLead(lead)}
+                            className="btn-ghost text-xs py-1 px-2 flex items-center gap-1 text-tx-muted hover:text-amber-600 hover:bg-amber-500/10"
+                            title="Pause outreach for this lead"
+                          >
+                            <Pause className="w-3 h-3" />
+                            <span>Pause</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => navigate(`/leads/${lead.id}?tab=analyze`)}
                           className="btn-ghost text-xs py-1 px-2.5 flex items-center gap-1"

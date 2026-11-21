@@ -54,6 +54,20 @@ export const ChatPage: React.FC = () => {
   // Softphone Dialer Modal
   const [showPhoneDialer, setShowPhoneDialer] = useState(false);
 
+  // In-CRM WebRTC Calling State (Voice or Video CRM-to-CRM)
+  const [activeCall, setActiveCall] = useState<{
+    isOpen: boolean;
+    mode: 'voice' | 'video';
+    roomCode: string;
+    roomUrl: string;
+    title: string;
+  } | null>(null);
+
+  // Edit Thread Name Modal
+  const [showEditThreadModal, setShowEditThreadModal] = useState(false);
+  const [editThreadName, setEditThreadName] = useState('');
+  const [savingThreadName, setSavingThreadName] = useState(false);
+
   // Delete Thread Confirmation Modal
   const [showDeleteThreadModal, setShowDeleteThreadModal] = useState(false);
   const [deletingThread, setDeletingThread] = useState(false);
@@ -277,24 +291,69 @@ export const ChatPage: React.FC = () => {
     e.target.value = '';
   };
 
-  // Instant Video Meeting Launcher
-  const handleStartVideoMeet = async () => {
+  // CRM-to-CRM Internal Audio or Video Call Launcher
+  const handleStartInternalCall = async (mode: 'voice' | 'video') => {
     if (!activeConv) return;
     setShowAttachmentMenu(false);
     const roomCode = Math.random().toString(36).substring(2, 9);
-    const meetUrl = `https://meet.jit.si/GlobalCRM-Call-${roomCode}`;
-    window.open(meetUrl, '_blank');
+    const roomUrl = `https://meet.jit.si/GlobalCRM-Internal-${roomCode}`;
+    const callTitle =
+      mode === 'voice'
+        ? `📞 CRM Voice Call: ${activeConv.name || 'Team'}`
+        : `📹 Strategy Meeting: ${activeConv.name || 'Team'}`;
+
+    // Open In-CRM Live Calling Modal immediately
+    setActiveCall({
+      isOpen: true,
+      mode,
+      roomCode,
+      roomUrl,
+      title: callTitle,
+    });
 
     const payload = JSON.stringify({
       type: 'meet_invite',
-      title: 'Live Video & Audio Strategy Session',
-      link: meetUrl,
+      callMode: mode,
+      title: callTitle,
+      link: roomUrl,
+      roomCode,
       startedBy: user?.name || 'CRM Team',
+      startedAt: new Date().toISOString(),
     });
 
     try {
       await api.post(`/conversations/${activeConv.id}/messages`, { body: payload });
     } catch {}
+  };
+
+  const handleJoinInternalCall = (url: string, title?: string, mode?: 'voice' | 'video') => {
+    setActiveCall({
+      isOpen: true,
+      mode: mode || 'video',
+      roomCode: url.split('-').pop() || 'call',
+      roomUrl: url,
+      title: title || 'Live CRM Session',
+    });
+  };
+
+  // Save renamed thread
+  const handleSaveThreadName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeConv || !editThreadName.trim()) return;
+    setSavingThreadName(true);
+    try {
+      const res: any = await api.patch(`/conversations/${activeConv.id}`, {
+        name: editThreadName.trim(),
+      });
+      const updated = res?.data || res;
+      setActiveConv(updated);
+      setConversations((prev) => prev.map((c) => (c.id === activeConv.id ? updated : c)));
+      setShowEditThreadModal(false);
+    } catch (err: any) {
+      alert(`Rename thread failed: ${err.message}`);
+    } finally {
+      setSavingThreadName(false);
+    }
   };
 
   // Delete entire conversation thread
@@ -478,39 +537,64 @@ export const ChatPage: React.FC = () => {
               {activeConv?.name ? activeConv.name.charAt(0).toUpperCase() : 'W'}
             </div>
             <div>
-              <span className="font-serif font-bold text-tx text-sm block truncate max-w-[160px] sm:max-w-none">
-                {activeConv?.name || 'Client Outreach Thread'}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-serif font-bold text-tx text-sm block truncate max-w-[160px] sm:max-w-none">
+                  {activeConv?.name || 'Client Outreach Thread'}
+                </span>
+                {activeConv && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditThreadName(activeConv.name || '');
+                      setShowEditThreadModal(true);
+                    }}
+                    className="p-1 text-tx-subtle hover:text-tx hover:bg-surface-2 rounded transition"
+                    title="Edit Thread Name"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               <span className="text-[10px] text-tx-subtle flex items-center gap-1 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                <span>WhatsApp Active Sync</span>
+                <span>WhatsApp Active Sync • CRM Direct Line</span>
               </span>
             </div>
           </div>
 
-          {/* Action Buttons: Voice Call, Video Call, Delete Thread */}
-          <div className="flex items-center gap-2">
-            {/* 1. Voice Call */}
+          {/* Action Buttons: Voice Call, Video Call, Dialer, Delete Thread */}
+          <div className="flex items-center gap-1.5">
+            {/* 1. In-CRM Voice Call */}
             <button
               type="button"
-              onClick={() => setShowPhoneDialer(true)}
-              className="p-2 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
-              title="Start Voice / Softphone Call"
+              onClick={() => handleStartInternalCall('voice')}
+              className="p-2 text-tx-muted hover:text-emerald-500 hover:bg-surface-2 rounded-lg transition"
+              title="Start In-CRM Voice Call"
             >
               <Phone className="w-4 h-4 text-tx" />
             </button>
 
-            {/* 2. Video Call / Meet */}
+            {/* 2. In-CRM Video Strategy Session */}
             <button
               type="button"
-              onClick={handleStartVideoMeet}
-              className="p-2 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
-              title="Start Live Video Strategy Call"
+              onClick={() => handleStartInternalCall('video')}
+              className="p-2 text-tx-muted hover:text-blue-500 hover:bg-surface-2 rounded-lg transition"
+              title="Start In-CRM Video Strategy Meeting"
             >
               <Video className="w-4 h-4 text-tx" />
             </button>
 
-            {/* 3. Delete Thread */}
+            {/* 3. Softphone Client Dialer */}
+            <button
+              type="button"
+              onClick={() => setShowPhoneDialer(true)}
+              className="p-2 text-tx-muted hover:text-tx hover:bg-surface-2 rounded-lg transition"
+              title="Open Phone Dialer"
+            >
+              <PhoneCall className="w-4 h-4 text-tx" />
+            </button>
+
+            {/* 4. Delete Thread */}
             {activeConv && (
               <button
                 type="button"
@@ -544,7 +628,7 @@ export const ChatPage: React.FC = () => {
               let voiceData: { audio: string; duration?: number } | null = null;
               let docData: { name: string; size?: string; data: string; caption?: string } | null = null;
               let imgData: { name?: string; data: string; caption?: string } | null = null;
-              let meetData: { title?: string; link: string; startedBy?: string } | null = null;
+              let meetData: { title?: string; link: string; startedBy?: string; callMode?: 'voice' | 'video' } | null = null;
 
               if (typeof m.body === 'string' && m.body.startsWith('{')) {
                 try {
@@ -651,27 +735,27 @@ export const ChatPage: React.FC = () => {
                         </div>
                       </div>
                     ) : meetData ? (
-                      /* 1. Live Video Call Invite Card */
-                      <div className="p-3.5 bg-surface-2 border border-border rounded-2xl space-y-2.5 shadow-sm">
+                      /* 1. Live CRM-to-CRM Internal Call Invite Card */
+                      <div className="p-3.5 bg-surface-2 border border-border rounded-2xl space-y-2.5 shadow-sm min-w-[260px]">
                         <div className="flex items-center gap-2 text-xs font-bold text-tx">
-                          <div className="w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center">
-                            <Video className="w-4 h-4" />
+                          <div className={`w-7 h-7 rounded-full ${meetData.callMode === 'voice' ? 'bg-emerald-600' : 'bg-blue-600'} text-white flex items-center justify-center`}>
+                            {meetData.callMode === 'voice' ? <Phone className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
                           </div>
-                          <span>{meetData.title || 'Live Strategy Video Call'}</span>
+                          <span>{meetData.title || 'Live Strategy Session'}</span>
                         </div>
                         <p className="text-[11px] text-tx-muted leading-relaxed">
-                          Started by {meetData.startedBy || 'Team'}. Audio &amp; video lines are open.
+                          Started by <strong>{meetData.startedBy || 'Team Member'}</strong>. Audio &amp; video connected.
                         </p>
-                        <a
-                          href={meetData.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-primary text-xs py-1.5 px-3 flex items-center justify-center gap-1.5 w-full font-semibold"
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleJoinInternalCall(meetData.link, meetData.title, meetData.callMode)}
+                          className="w-full justify-center text-xs"
                         >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>Join Video Call</span>
-                          <ExternalLink className="w-3 h-3 ml-1" />
-                        </a>
+                          {meetData.callMode === 'voice' ? <Phone className="w-3 h-3 mr-1.5" /> : <Video className="w-3 h-3 mr-1.5" />}
+                          <span>Join Call In CRM</span>
+                        </Button>
                       </div>
                     ) : docData ? (
                       /* 2. WhatsApp Document / PDF Box */
@@ -780,7 +864,10 @@ export const ChatPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={handleStartVideoMeet}
+              onClick={() => {
+                setShowAttachmentMenu(false);
+                handleStartInternalCall('video');
+              }}
               className="w-full text-left px-3 py-2 text-xs text-tx hover:bg-surface-2 rounded-xl flex items-center gap-2.5 transition"
             >
               <Video className="w-4 h-4 text-tx" />
@@ -999,6 +1086,101 @@ export const ChatPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Thread Name Modal */}
+      <Modal
+        isOpen={showEditThreadModal}
+        onClose={() => setShowEditThreadModal(false)}
+        title="Edit Thread Name"
+      >
+        <form onSubmit={handleSaveThreadName} className="space-y-4">
+          <Input
+            label="Thread Name *"
+            required
+            value={editThreadName}
+            onChange={(e) => setEditThreadName(e.target.value)}
+            placeholder="e.g. Khalid & Salam Strategy Discussion"
+          />
+          <p className="text-[11px] text-tx-muted leading-relaxed">
+            Renaming this thread will update the channel title for all participants.
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowEditThreadModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={savingThreadName}
+            >
+              Save Name
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* In-CRM Live Audio/Video WebRTC Calling Session */}
+      {activeCall && (
+        <Modal
+          isOpen={true}
+          onClose={() => setActiveCall(null)}
+          title={`CRM-to-CRM Live Call: ${activeConv?.name || 'Team Session'}`}
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-surface-2 border border-border rounded-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div>
+                  <span className="text-xs font-bold text-tx block">{activeCall.title}</span>
+                  <span className="text-[10px] text-tx-muted font-mono">
+                    Room: {activeCall.roomCode} • Encrypted In-CRM Direct Line
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(activeCall.roomUrl, '_blank')}
+                  title="Open in new window"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setActiveCall(null)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                >
+                  <Phone className="w-3.5 h-3.5 mr-1" />
+                  <span>End Call</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Embedded WebRTC Call Window */}
+            <div className="rounded-xl overflow-hidden border border-border bg-black aspect-video relative">
+              <iframe
+                src={`${activeCall.roomUrl}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.disableDeepLinking=true`}
+                allow="camera; microphone; display-capture; autoplay; clipboard-write"
+                className="w-full h-[460px] border-0"
+                title="Internal CRM Call Room"
+              />
+            </div>
+            <p className="text-[11px] text-tx-muted text-center leading-relaxed">
+              Internal encrypted call session between {user?.name || 'You'} and thread members. No external app required.
+            </p>
+          </div>
+        </Modal>
+      )}
     </Card>
   );
 };

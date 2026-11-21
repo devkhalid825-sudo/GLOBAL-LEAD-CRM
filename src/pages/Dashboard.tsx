@@ -23,6 +23,10 @@ import {
   Trash2,
   BarChart3,
   Activity,
+  Eye,
+  ShieldCheck,
+  UserCheck,
+  Briefcase,
 } from 'lucide-react';
 import {
   Card,
@@ -80,6 +84,23 @@ export const DashboardPage: React.FC = () => {
   const [seeding, setSeeding] = useState(false);
   const [seedNotice, setSeedNotice] = useState<string | null>(null);
 
+  // Real-time Screen Time & Sales Team Performance Tracking
+  const [teamPerf, setTeamPerf] = useState<{
+    summary: {
+      totalStaff: number;
+      salesReps: number;
+      managers: number;
+      admins: number;
+      activeNow: number;
+      totalScreenTimeHours: number;
+    };
+    members: any[];
+  } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'sales' | 'manager' | 'admin'>('all');
+  const [selectedUserAudit, setSelectedUserAudit] = useState<any | null>(null);
+  const [userAuditLogs, setUserAuditLogs] = useState<any[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
   // Team Productivity & Sales Agent Tracking
   const [teamStats, setTeamStats] = useState<AgentStat[]>([]);
 
@@ -104,13 +125,32 @@ export const DashboardPage: React.FC = () => {
     try {
       setLoading(true);
 
-      const [leadsRes, meetingsRes, teamRes, tasksRes, gadsRes] = await Promise.allSettled([
+      const [leadsRes, meetingsRes, teamRes, tasksRes, gadsRes, teamPerfRes] = await Promise.allSettled([
         api.get<any>('/leads?limit=10'),
         api.get<any>('/meetings/upcoming'),
         api.get<any>('/reports/team-productivity'),
         api.get<any>('/tasks'),
         api.get<any>('/reports/google-ads-insights'),
+        api.get<any>('/users/team-performance'),
       ]);
+
+      if (teamPerfRes.status === 'fulfilled') {
+        const perfData = teamPerfRes.value?.data || teamPerfRes.value;
+        if (perfData?.summary) {
+          setTeamPerf(perfData);
+          if (Array.isArray(perfData.members) && perfData.members.length > 0) {
+            const teamAssignees = perfData.members.map((m: any) => ({
+              id: m.id,
+              name: m.name,
+              role: m.role,
+            }));
+            setAssignees(teamAssignees);
+            if (!taskAssignee && teamAssignees.length > 0) {
+              setTaskAssignee(teamAssignees[0].id);
+            }
+          }
+        }
+      }
 
       if (leadsRes.status === 'fulfilled') {
         const d = leadsRes.value;
@@ -167,6 +207,20 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const handleOpenUserAudit = async (member: any) => {
+    setSelectedUserAudit(member);
+    setUserAuditLogs([]);
+    setLoadingAudit(true);
+    try {
+      const res: any = await api.get(`/users/activities/${member.id}`);
+      setUserAuditLogs(Array.isArray(res?.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAudit(false);
+    }
+  };
 
   const handleQuickSeed = async () => {
     setSeeding(true);
@@ -345,36 +399,137 @@ export const DashboardPage: React.FC = () => {
 
       {/* Two-Column Grid: Team Productivity (c7) & Task Delegation (c5) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Team Productivity Table (span 7) */}
+        {/* Sales Team & Staff Screen Time Tracker (span 7) */}
         <Card className="lg:col-span-7 p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
             <div>
-              <h2 className="font-serif text-xl font-semibold text-tx flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-tx" />
-                <span>Team productivity</span>
-              </h2>
+                <h2 className="font-serif text-lg font-bold text-tx">Sales Team &amp; Screen Time Tracker</h2>
+              </div>
               <p className="text-xs text-tx-muted mt-0.5">
-                Active hours, WhatsApp outreach, scraped leads &amp; deals closed.
+                Real-time active presence, screen hours, leads opened &amp; outreach actions.
               </p>
             </div>
-            <Pill active className="text-[11px]">
-              {teamStats.filter((t) => t.isOnline).length || 2} Online
-            </Pill>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Pill active className="text-[10px] flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{teamPerf?.summary?.activeNow ?? 1} Online Now</span>
+              </Pill>
+              <Pill className="text-[10px] mono">
+                ⏱️ {teamPerf?.summary?.totalScreenTimeHours ?? 0}h Team Screen Time
+              </Pill>
+            </div>
+          </div>
+
+          {/* Role Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <button
+              onClick={() => setRoleFilter('all')}
+              className={`pill-luxury text-[11px] ${roleFilter === 'all' ? 'on' : ''}`}
+            >
+              All Staff ({teamPerf?.summary?.totalStaff ?? teamStats.length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('sales')}
+              className={`pill-luxury text-[11px] ${roleFilter === 'sales' ? 'on' : ''}`}
+            >
+              💼 Sales Reps ({teamPerf?.summary?.salesReps ?? 0})
+            </button>
+            <button
+              onClick={() => setRoleFilter('manager')}
+              className={`pill-luxury text-[11px] ${roleFilter === 'manager' ? 'on' : ''}`}
+            >
+              🛡️ Managers ({teamPerf?.summary?.managers ?? 0})
+            </button>
+            <button
+              onClick={() => setRoleFilter('admin')}
+              className={`pill-luxury text-[11px] ${roleFilter === 'admin' ? 'on' : ''}`}
+            >
+              👑 Admins ({teamPerf?.summary?.admins ?? 0})
+            </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-tx border-collapse">
               <thead>
                 <tr className="border-b border-border text-tx-subtle text-[11px]">
-                  <th className="py-2.5 px-3 font-medium">Agent</th>
-                  <th className="py-2.5 px-3 font-medium">CRM hours</th>
-                  <th className="py-2.5 px-3 font-medium">WhatsApp</th>
-                  <th className="py-2.5 px-3 font-medium">Scraped</th>
-                  <th className="py-2.5 px-3 font-medium text-right">Closed</th>
+                  <th className="py-2.5 px-3 font-medium">Team Member</th>
+                  <th className="py-2.5 px-3 font-medium">Screen Time</th>
+                  <th className="py-2.5 px-3 font-medium text-center">👁️ Leads Opened</th>
+                  <th className="py-2.5 px-3 font-medium text-center">💬 WhatsApp</th>
+                  <th className="py-2.5 px-3 font-medium text-center">📞 Calls</th>
+                  <th className="py-2.5 px-3 font-medium text-center">✅ Tasks</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Audit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {teamStats.length > 0 ? (
+                {(teamPerf?.members || []).length > 0 ? (
+                  (teamPerf?.members || [])
+                    .filter((m) => roleFilter === 'all' || m.role === roleFilter)
+                    .map((member) => (
+                      <tr key={member.id} className="hover:bg-row-hover transition">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                member.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-tx-subtle'
+                              }`}
+                              title={member.isOnline ? 'Active Online Now' : 'Offline'}
+                            />
+                            <div>
+                              <div className="font-serif font-bold text-tx text-xs">{member.name}</div>
+                              <div className="text-[10px] text-tx-subtle mono flex items-center gap-1.5">
+                                <span className="uppercase font-semibold text-[9px] px-1 py-0.2 bg-surface-2 border border-border rounded">
+                                  {member.role}
+                                </span>
+                                <span>{member.email}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3">
+                          <span className="font-mono font-bold text-tx text-xs block">
+                            {member.screenTimeFormatted || '0m'}
+                          </span>
+                          <span className="text-[10px] text-tx-muted block">
+                            {member.isOnline ? '🟢 Live on screen' : 'Offline'}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3 font-mono text-center font-bold text-tx">
+                          {member.leadsClicked || 0}
+                        </td>
+
+                        <td className="py-3 px-3 font-mono text-center font-bold text-tx">
+                          {member.whatsappSent || 0}
+                        </td>
+
+                        <td className="py-3 px-3 font-mono text-center font-bold text-tx">
+                          {member.callsMade || 0}
+                        </td>
+
+                        <td className="py-3 px-3 font-mono text-center font-bold text-tx">
+                          {member.tasksCompleted || 0}
+                        </td>
+
+                        <td className="py-3 px-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenUserAudit(member)}
+                            className="text-[11px] py-1 px-2"
+                            title="View exact timeline of clicked leads and actions"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            <span>Audit Trail</span>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                ) : (
                   teamStats.map((agent) => (
                     <tr key={agent.userId} className="hover:bg-row-hover transition">
                       <td className="py-3 px-3">
@@ -382,24 +537,15 @@ export const DashboardPage: React.FC = () => {
                         <div className="text-[11px] text-tx-subtle">{agent.role}</div>
                       </td>
                       <td className="py-3 px-3 font-mono text-tx">{formatMins(agent.activeMinutesToday)}</td>
-                      <td className="py-3 px-3 font-mono text-tx">{agent.whatsappCount || 0}</td>
-                      <td className="py-3 px-3 font-mono text-tx">{agent.leadsScraped || 0}</td>
-                      <td className="py-3 px-3 font-mono text-tx text-right font-bold">{agent.wonCount || 0}</td>
-                    </tr>
-                  ))
-                ) : (
-                  [
-                    ['Ayesha Khan', '6h 12m', 212, 1480, 4],
-                    ['Omar Siddiqui', '5h 40m', 187, 1215, 3],
-                    ['Sara Ahmed', '7h 05m', 301, 990, 6],
-                    ['Bilal Raza', '4h 22m', 96, 1730, 2],
-                  ].map((r, i) => (
-                    <tr key={i} className="hover:bg-row-hover transition">
-                      <td className="py-3 px-3 font-serif font-semibold text-tx">{r[0]}</td>
-                      <td className="py-3 px-3 font-mono text-tx">{r[1]}</td>
-                      <td className="py-3 px-3 font-mono text-tx">{r[2]}</td>
-                      <td className="py-3 px-3 font-mono text-tx">{r[3]}</td>
-                      <td className="py-3 px-3 font-mono text-tx text-right font-bold">{r[4]}</td>
+                      <td className="py-3 px-3 font-mono text-center text-tx">{agent.leadsScraped || 0}</td>
+                      <td className="py-3 px-3 font-mono text-center text-tx">{agent.whatsappCount || 0}</td>
+                      <td className="py-3 px-3 font-mono text-center text-tx">{agent.callsCount || 0}</td>
+                      <td className="py-3 px-3 font-mono text-center text-tx font-bold">{agent.wonCount || 0}</td>
+                      <td className="py-3 px-3 text-right">
+                        <Button variant="ghost" size="sm" className="text-[11px] py-1 px-2">
+                          Audit
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -845,6 +991,80 @@ export const DashboardPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Team Member Activity & Leads Audit Modal */}
+      {selectedUserAudit && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedUserAudit(null)}
+          title={`Activity Audit Trail: ${selectedUserAudit.name} (${selectedUserAudit.role})`}
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-surface-2 border border-border rounded-xl flex items-center justify-between text-xs">
+              <div>
+                <span className="font-bold text-tx block">{selectedUserAudit.name}</span>
+                <span className="text-[11px] text-tx-muted font-mono">{selectedUserAudit.email}</span>
+              </div>
+              <div className="text-right">
+                <span className="font-mono font-bold text-tx block">
+                  {selectedUserAudit.screenTimeFormatted} screen time
+                </span>
+                <span className="text-[10px] text-tx-muted">
+                  {selectedUserAudit.isOnline ? '🟢 Online Now' : 'Offline'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-xs uppercase tracking-wider font-semibold text-tx-muted block">
+                Recent Actions &amp; Clicked Leads (Today)
+              </span>
+
+              {loadingAudit ? (
+                <div className="py-8 text-center text-xs text-tx-muted space-y-2">
+                  <div className="w-6 h-6 border-2 border-tx border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p>Loading activity trail...</p>
+                </div>
+              ) : userAuditLogs.length === 0 ? (
+                <div className="py-8 text-center text-xs text-tx-muted bg-surface-2 border border-border rounded-xl">
+                  No activities recorded yet for this session.
+                </div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto space-y-2">
+                  {userAuditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="p-2.5 bg-surface-2 border border-border rounded-xl flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-semibold text-tx block truncate">
+                          {log.title}
+                        </span>
+                        <span className="text-[10px] text-tx-muted font-mono block">
+                          Entity: {log.entity} {log.entityId ? `• ID: ${log.entityId.slice(0, 8)}...` : ''}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-tx-subtle font-mono flex-shrink-0">
+                        {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end border-t border-border">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setSelectedUserAudit(null)}
+              >
+                Close Audit
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
