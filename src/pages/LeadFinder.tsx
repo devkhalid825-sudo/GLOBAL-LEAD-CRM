@@ -101,7 +101,7 @@ export const LeadFinderPage: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState('AE');
   const [selectedCity, setSelectedCity] = useState('Dubai');
   const [selectedCategory, setSelectedCategory] = useState(FALLBACK_CATEGORIES[0].id);
-  const [selectedSource, setSelectedSource] = useState('gemini');
+  const [selectedSource, setSelectedSource] = useState('auto');
   const [searchRadius, setSearchRadius] = useState(25);
 
   // Custom Category Modal
@@ -386,14 +386,18 @@ export const LeadFinderPage: React.FC = () => {
 
           {/* Scraping Engine Selection Pills matching Figma */}
           <div className="space-y-2">
-            <label className="text-xs text-tx-muted block font-medium">Scraping engine</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-tx-muted block font-medium">Scraping engine &amp; multi-provider failover</label>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Multi-key auto rotation active</span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {[
+                { id: 'auto', label: '⚡ Auto Multi-Key Failover (Recommended)' },
                 { id: 'geoapify', label: 'Geoapify (3,000/day Free)' },
+                { id: 'gemini', label: 'Google Gemini AI (Free)' },
                 { id: 'serper', label: 'Serper.dev (Google Maps)' },
                 { id: 'overpass', label: 'OpenStreetMap (100% Free)' },
                 { id: 'apify', label: 'Apify Maps Scraper' },
-                { id: 'gemini', label: 'Google Gemini AI (Free)' },
                 { id: 'serpapi', label: 'SerpAPI' },
               ].map((engine) => (
                 <Pill
@@ -664,23 +668,27 @@ export const LeadFinderPage: React.FC = () => {
         subtitle="Hot-reloads keys in memory without server restarts"
         maxWidth="max-w-md"
       >
-        <div className="divide-y divide-border text-xs">
-          <div className="py-2.5 flex items-center justify-between">
-            <span className="text-tx-muted">Gemini AI</span>
-            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
-          </div>
-          <div className="py-2.5 flex items-center justify-between">
-            <span className="text-tx-muted">Serper.dev</span>
-            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
-          </div>
-          <div className="py-2.5 flex items-center justify-between">
-            <span className="text-tx-muted">Meta Graph Token</span>
-            <Pill active className="pointer-events-none text-[11px]">Active</Pill>
-          </div>
-          <div className="py-2.5 flex items-center justify-between">
-            <span className="text-tx-muted">SerpAPI</span>
-            <Pill className="pointer-events-none text-[11px]">Optional</Pill>
-          </div>
+        <div className="divide-y divide-border text-xs max-h-48 overflow-y-auto mb-3">
+          {keysStatus.length > 0 ? (
+            keysStatus.map((k) => (
+              <div key={k.id} className="py-2 flex items-center justify-between">
+                <div>
+                  <span className="text-tx font-medium block">{k.label || k.providerId}</span>
+                  <span className="text-[10px] text-tx-muted font-mono">{k.providerId.toUpperCase()}</span>
+                </div>
+                <Pill
+                  active={k.status === 'healthy'}
+                  className="pointer-events-none text-[10px]"
+                >
+                  {k.status === 'healthy' ? 'Active / Healthy' : k.status === 'cooling_down' ? 'Cooling Down (Auto-Resets)' : k.status}
+                </Pill>
+              </div>
+            ))
+          ) : (
+            <div className="py-2.5 text-center text-tx-muted text-xs">
+              OpenStreetMap (100% Free) &amp; Environment keys active.
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleQuickAddKey} className="space-y-3 pt-3">
@@ -690,11 +698,13 @@ export const LeadFinderPage: React.FC = () => {
             onChange={(e) => setNewKeyProvider(e.target.value)}
           >
             <option value="geoapify">Geoapify Places (3,000/day Free)</option>
-            <option value="apify">Apify Maps Scraper ($5 Free)</option>
+            <option value="gemini">Google Gemini AI (Free)</option>
+            <option value="groq">Groq Cloud AI (Free Fast LPU)</option>
+            <option value="openrouter">OpenRouter AI (Free Models)</option>
             <option value="serper">Serper.dev (Google Maps)</option>
-            <option value="gemini">Google Gemini AI</option>
-            <option value="meta">Meta Graph Access Token</option>
+            <option value="apify">Apify Maps Scraper ($5 Free)</option>
             <option value="serpapi">SerpAPI</option>
+            <option value="meta">Meta Graph Access Token</option>
           </Select>
 
           <Input
